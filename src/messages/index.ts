@@ -158,7 +158,7 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
 
     for (const match of matches) {
       const userId = match[1];
-      const userPreference = await this.payload.find({
+      const userPreference = await payload.find({
         collection: "users",
         where: {
           discordId: {
@@ -168,7 +168,7 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
       });
 
       if (userPreference?.dontPing) {
-        const discordUser = await this.discord.users.fetch(userId);
+        const discordUser = await client.users.fetch(userId);
         messageContent = messageContent.replace(
           match[0],
           `@${discordUser.username}`
