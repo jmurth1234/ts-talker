@@ -53,6 +53,15 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
       }
     }
 
+    if (!bot) {
+      // pick one at random
+      const randomBot = activeBots[Math.floor(Math.random() * activeBots.length)];
+
+      if (randomBot.chance > Math.random()) {
+        bot = randomBot;
+      }
+    }
+
     if (bot) {
       await handleReply(message, bot);
       return;
