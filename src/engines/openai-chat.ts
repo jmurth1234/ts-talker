@@ -8,6 +8,7 @@ import {
   ChatCompletionMessageParam,
 } from "openai/resources";
 import convertFunction from "../lib/function-converter";
+import memoize from "promise-memoize";
 
 const basePrompt = `You are a discord bot designed to perform different prompts. The following will contain:
 - the prompt -- you should follow this as much as possible
@@ -16,6 +17,35 @@ const basePrompt = `You are a discord bot designed to perform different prompts.
 Please write a suitable reply, only replying with the message
 
 The prompt is as follows:`;
+
+const describeImage = memoize(
+  async (url: string, model: string) => {
+    const description = await OpenAI.getInstance().chat.completions.create({
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: "Describe the image",
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url,
+              },
+            },
+          ],
+        },
+      ],
+      model,
+      max_tokens: 2047,
+    });
+
+    return description.choices[0].message.content;
+  },
+  { maxAge: 60 * 60 * 1000 }
+);
 
 class OpenAIChatEngine extends TextEngine {
   constructor(payload: Payload) {
@@ -80,6 +110,7 @@ class OpenAIChatEngine extends TextEngine {
     for (const msg of messages) {
       const isBot = msg.author.bot && msg.author.username === bot.username;
       const lastMessage = chatMessages[chatMessages.length - 1];
+      const isLastMessage = msg === messages[messages.length - 1];
 
       // format date as yyyy-MM-dd HH:mm:ss
       const timestamp = msg.createdAt
@@ -104,30 +135,12 @@ class OpenAIChatEngine extends TextEngine {
           bot.visionModel
         ) {
           // use the vision model to describe the image
-          const description =
-            await OpenAI.getInstance().chat.completions.create({
-              messages: [
-                {
-                  role: "user",
-                  content: [
-                    {
-                      type: "text",
-                      text: "Describe the image",
-                    },
-                    {
-                      type: "image_url",
-                      image_url: {
-                        url: attachment.url,
-                      },
-                    },
-                  ],
-                },
-              ],
-              model: bot.visionModel,
-              max_tokens: 2047,
-            });
+          const description = await describeImage(
+            attachment.url,
+            bot.visionModel
+          );
 
-          messageText += ` desc: ${description.choices[0].message.content}`;
+          messageText += ` you see: ${description.choices[0].message.content}`;
         }
       }
 
@@ -198,6 +211,10 @@ class OpenAIChatEngine extends TextEngine {
         ? content
         : `[${timestamp}] <${msg.author.username}> ${content}`;
 
+      const imageUrls = msg.attachments
+        .filter((a) => a.url && a.contentType?.startsWith("image"))
+        .map((a) => a.url);
+
       // use regex to clear characters that are not allowed in usernames
       const username = msg.author.username.replace(/[^a-zA-Z0-9_]/g, "");
 
@@ -209,14 +226,48 @@ class OpenAIChatEngine extends TextEngine {
         messageText += `\n[embed] json: ${JSON.stringify(embed)}`;
       }
 
-      if (lastMessage && lastMessage.role === role) {
-        lastMessage.content += `\n${messageText}`;
+      // @ts-ignore
+      if (lastMessage && lastMessage.role === role && lastMessage.name === username) {
+        const content = lastMessage.content as ChatCompletionContentPart[];
+        content[0].text += `\n${messageText}`;
+        if (bot.enableVision && !bot.visionModel) {
+          for (const url of imageUrls) {
+            content.push({
+              type: "image_url",
+              image_url: {
+                url,
+              },
+            });
+          }
+        }
       } else {
-        chatMessages.push({
-          role,
-          name: isBot ? bot.username : username,
-          content: messageText,
-        });
+        let message: ChatCompletionMessageParam;
+        if (isBot) {
+          message = {
+            role: "assistant",
+            name: username,
+            content: messageText,
+          };
+        } else {
+          message = {
+            role: "user",
+            name: username,
+            content: [{ type: "text", text: messageText }],
+          };
+
+          if (bot.enableVision && !bot.visionModel) {
+            for (const url of imageUrls) {
+              (message.content as ChatCompletionContentPart[]).push({
+                type: "image_url",
+                image_url: {
+                  url,
+                },
+              });
+            }
+          }
+        }
+
+        chatMessages.push(message);
       }
     }
   }
