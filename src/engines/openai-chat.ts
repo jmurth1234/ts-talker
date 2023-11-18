@@ -161,6 +161,8 @@ class OpenAIChatEngine extends TextEngine {
             });
           }
         }
+      } else if (lastMessage && lastMessage.role === "assistant" && isBot) {
+        lastMessage.content += `\n${messageText}`;
       } else {
         let message: ChatCompletionMessageParam;
         if (isBot) {
@@ -241,7 +243,7 @@ class OpenAIChatEngine extends TextEngine {
       }
 
       // @ts-ignore
-      if (lastMessage && lastMessage.role === role && lastMessage.name === username) {
+      if (lastMessage && lastMessage.role === 'user' && lastMessage.name === username) {
         const content = lastMessage.content as ChatCompletionContentPart[];
         content[0].text += `\n${messageText}`;
         if (bot.enableVision && !bot.visionModel) {
@@ -254,6 +256,8 @@ class OpenAIChatEngine extends TextEngine {
             });
           }
         }
+      } else if (lastMessage && lastMessage.role === "assistant" && isBot) {
+        lastMessage.content += `\n${messageText}`;
       } else {
         let message: ChatCompletionMessageParam;
         if (isBot) {
