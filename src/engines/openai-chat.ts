@@ -42,6 +42,8 @@ const describeImage = memoize(
       max_tokens: 2047,
     });
 
+    console.dir(description, { depth: null });
+
     return description.choices[0].message.content;
   },
   { maxAge: 60 * 60 * 1000 }
@@ -110,7 +112,6 @@ class OpenAIChatEngine extends TextEngine {
     for (const msg of messages) {
       const isBot = msg.author.bot && msg.author.username === bot.username;
       const lastMessage = chatMessages[chatMessages.length - 1];
-      const isLastMessage = msg === messages[messages.length - 1];
 
       // format date as yyyy-MM-dd HH:mm:ss
       const timestamp = msg.createdAt
@@ -140,7 +141,7 @@ class OpenAIChatEngine extends TextEngine {
             bot.visionModel
           );
 
-          messageText += ` you see: ${description.choices[0].message.content}`;
+          messageText += ` you see: ${description}`;
         }
       }
 
@@ -209,9 +210,7 @@ class OpenAIChatEngine extends TextEngine {
         .replace("T", " ")
         .substring(0, 19);
       const content = bot.canPingUsers ? msg.content : msg.cleanContent;
-      var messageText = isBot
-        ? content
-        : `[${timestamp}] <${msg.author.username}> ${content}`;
+      var messageText = content;
 
       const imageUrls = msg.attachments
         .filter((a) => a.url && a.contentType?.startsWith("image"))
@@ -234,7 +233,7 @@ class OpenAIChatEngine extends TextEngine {
             bot.visionModel
           );
 
-          messageText += ` you see: ${description.choices[0].message.content}`;
+          messageText += ` you see: ${description}`;
         }
       }
 
