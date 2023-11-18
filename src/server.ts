@@ -51,7 +51,7 @@ const start = async () => {
   await setupCommands(client, rest, payload);
   await setupMessageHandling(client, payload);
 
-  app.listen(3000);
+  app.listen(3000, '0.0.0.0');
 };
 
 start();
