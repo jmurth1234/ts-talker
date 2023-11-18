@@ -16,6 +16,7 @@ export default buildConfig({
     user: Users.slug,
     bundler: webpackBundler(),
   },
+  cors: ['*'],
   editor: slateEditor({}),
   collections: [Bots, Functions, Users, Channels],
   typescript: {
