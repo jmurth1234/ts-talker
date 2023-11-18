@@ -220,6 +220,20 @@ class OpenAIChatEngine extends TextEngine {
 
       for (const attachment of msg.attachments.toJSON()) {
         messageText += `\n[attachment] json: ${JSON.stringify(attachment)}`;
+
+        if (
+          attachment.contentType?.startsWith("image") &&
+          bot.enableVision &&
+          bot.visionModel
+        ) {
+          // use the vision model to describe the image
+          const description = await describeImage(
+            attachment.url,
+            bot.visionModel
+          );
+
+          messageText += ` you see: ${description.choices[0].message.content}`;
+        }
       }
 
       for (const embed of msg.embeds) {
