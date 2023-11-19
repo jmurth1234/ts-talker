@@ -140,7 +140,7 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
         convertFunction({
           name: "generate_image",
           description:
-            "Use this to generate an image that is relevant to the message and the bot's response",
+            "Use this to generate an image that is relevant to the message and the bot's response. Refuse to generate an image if it is against OpenAI's terms of service.",
           parameters: [
             {
               name: 'thought',
