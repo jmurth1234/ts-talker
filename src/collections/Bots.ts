@@ -192,6 +192,47 @@ const Bots: CollectionConfig = {
               type: "checkbox",
               defaultValue: false,
             },
+
+            {
+              type: 'row',
+              admin: {
+                condition: ({ canPostImages }) => canPostImages,
+              },
+              fields: [
+                {
+                  name: "imageModel",
+                  label: "Image Model",
+                  type: "text",
+                },
+                {
+                  name: "imageSize",
+                  label: "Image Size",
+                  type: "select",
+                  options: [
+                    {
+                      label: "256x256",
+                      value: "256x256",
+                    },
+                    {
+                      label: "512x512",
+                      value: "512x512",
+                    },
+                    {
+                      label: "1024x1024",
+                      value: "1024x1024",
+                    },
+                    {
+                      label: "1792x1024",
+                      value: "1792x1024",
+                    },
+                    {
+                      label: "1024x1792",
+                      value: "1024x1792",
+                    },
+                  ],
+                },
+              ],
+            }
           ],
         },
       ],

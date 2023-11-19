@@ -153,7 +153,7 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
               name: "shouldGenerate",
               type: "boolean",
               description:
-                "Whether to generate an image. Not all messages need an image. Judge based on the message and the bot's response, and whether an image would be relevant",
+                "Whether to generate an image. Not all messages need an image. Judge based on the message and the bot's response, and whether an image would be relevant. Prefer to not generate an image if you are unsure.",
               required: true,
             },
             {
@@ -180,10 +180,10 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
 
     try {
       const image = await OpenAI.getInstance().images.generate({
-        model: "dall-e-3",
+        model:bot.imageModel || "dall-e-2",
         prompt: args.prompt,
         n: 1,
-        size: "1024x1024",
+        size: bot.imageSize || '512x512'
       });
 
       return image.data[0].url;

@@ -39,6 +39,8 @@ export interface Bot {
   messagePerUser?: boolean | null;
   canPingUsers?: boolean | null;
   canPostImages?: boolean | null;
+  imageModel?: string | null;
+  imageSize?: ('256x256' | '512x512' | '1024x1024' | '1792x1024' | '1024x1792') | null;
   updatedAt: string;
   createdAt: string;
 }
