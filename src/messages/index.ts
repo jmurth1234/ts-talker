@@ -131,12 +131,8 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
         },
         {
           role: "user",
-          content: `${message.author.username}#${message.author.discriminator}: ${message.content}`,
-        },
-        {
-          role: "assistant",
-          content: response,
-        },
+          content: `Last user message from ${message.author.username}: ${message.content}. Bot response: ${response}`,
+        }
       ],
       model: "gpt-3.5-turbo",
       max_tokens: 2047,
@@ -144,12 +140,18 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
         convertFunction({
           name: "generate_image",
           description:
-            "Use this to generate an image that is relevant to the message",
+            "Use this to generate an image that is relevant to the message and the bot's response",
           parameters: [
+            {
+              name: 'thought',
+              type: 'string',
+              description: 'Your reasoning for whether an image is relevant or not. ',
+              required: true,
+            },
             {
               name: "shouldGenerate",
               type: "boolean",
-              description: "Whether to generate an image",
+              description: "Whether to generate an image. Not all messages need an image. Judge based on the message and the bot's response, and whether an image would be relevant",
               required: true,
             },
             {
@@ -170,6 +172,7 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
     // handle image generation
     const result = botResponse.choices[0].message;
     const args = JSON.parse(result.function_call.arguments);
+    console.dir(args, { depth: null });
 
     if (!args.shouldGenerate) return;
 
