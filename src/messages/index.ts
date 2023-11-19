@@ -132,7 +132,7 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
         {
           role: "user",
           content: `Last user message from ${message.author.username}: ${message.content}. Bot response: ${response}`,
-        }
+        },
       ],
       model: "gpt-3.5-turbo",
       max_tokens: 2047,
@@ -143,15 +143,17 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
             "Use this to generate an image that is relevant to the message and the bot's response. Refuse to generate an image if it is against OpenAI's terms of service.",
           parameters: [
             {
-              name: 'thought',
-              type: 'string',
-              description: 'Your reasoning for whether an image is relevant or not. ',
+              name: "thought",
+              type: "string",
+              description:
+                "Your reasoning for whether an image is relevant or not. ",
               required: true,
             },
             {
               name: "shouldGenerate",
               type: "boolean",
-              description: "Whether to generate an image. Not all messages need an image. Judge based on the message and the bot's response, and whether an image would be relevant",
+              description:
+                "Whether to generate an image. Not all messages need an image. Judge based on the message and the bot's response, and whether an image would be relevant",
               required: true,
             },
             {
@@ -176,14 +178,19 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
 
     if (!args.shouldGenerate) return;
 
-    const image = await OpenAI.getInstance().images.generate({
-      model: "dall-e-3",
-      prompt: args.prompt,
-      n: 1,
-      size: "1024x1024",
-    });
+    try {
+      const image = await OpenAI.getInstance().images.generate({
+        model: "dall-e-3",
+        prompt: args.prompt,
+        n: 1,
+        size: "1024x1024",
+      });
 
-    return image.data[0].url;
+      return image.data[0].url;
+    } catch (error) {
+      console.error(error);
+      return;
+    }
   }
 
   function getEngine(modelType: string) {
