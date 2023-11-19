@@ -373,6 +373,8 @@ class OpenAIChatEngine extends TextEngine {
           max_tokens: 2047,
         });
 
+        console.dir(response, { depth: null });
+
         var msg = response.choices[0].message.content;
         var filteredMsg = msg.includes("> ")
           ? msg.substring(msg.indexOf("> ") + 2)

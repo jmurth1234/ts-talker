@@ -1,7 +1,7 @@
 import { ChatCompletionCreateParams } from "openai/resources";
 import { Function } from "payload/generated-types";
 
-export default function convertFunction(func: Function) {
+export default function convertFunction(func: Partial<Function>): ChatCompletionCreateParams.Function {
   const chatFunction: ChatCompletionCreateParams.Function = {
     name: func.name,
     description: func.description,

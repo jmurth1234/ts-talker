@@ -38,6 +38,7 @@ export interface Bot {
   promptSuffix?: string | null;
   messagePerUser?: boolean | null;
   canPingUsers?: boolean | null;
+  canPostImages?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }

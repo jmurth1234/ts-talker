@@ -3,6 +3,7 @@ import { CreateBotCommand } from "./create-bot";
 import { Client, Collection, Events, REST, Routes } from "discord.js";
 import { Command } from "./base";
 import { LoginCommand } from "./login";
+import { ListCommand } from "./list";
 
 const clientId = process.env.DISCORD_CLIENT_ID;
 
@@ -14,7 +15,10 @@ export async function setupCommands(
   const registeredCommands = [
     new CreateBotCommand(payload).setup(),
     new LoginCommand(payload).setup(),
+    new ListCommand(payload).setup(),
   ];
+
+  console.log(`Registering ${registeredCommands.length} commands.`);
 
   const commands = new Collection();
   for (const command of registeredCommands) {
@@ -22,9 +26,11 @@ export async function setupCommands(
   }
 
   // Register commands
-  await rest.put(Routes.applicationCommands(clientId), {
+  const response = await rest.put(Routes.applicationCommands(clientId), {
     body: registeredCommands.map((command) => command.data),
   });
+
+  console.log("Successfully registered application commands.", response);
 
   client.on(Events.InteractionCreate, async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
