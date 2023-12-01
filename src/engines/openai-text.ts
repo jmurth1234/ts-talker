@@ -21,7 +21,7 @@ class OpenAITextEngine extends TextEngine {
     let stopSequences: string[] = [stopSequence, "\n\n"];
 
     try {
-      const response = await OpenAI.getInstance().completions.create({
+      const response = await OpenAI.getInstance(bot).completions.create({
         model: bot.model,
         prompt: messages,
         temperature: 0.6,

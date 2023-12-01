@@ -76,6 +76,24 @@ const Bots: CollectionConfig = {
               ],
             },
             {
+              type: "row",
+              fields: [
+                {
+                  name: "endpointUrl",
+                  label: "Endpoint URL",
+                  type: "text",
+                },
+                {
+                  name: "apiKey",
+                  label: "API Key",
+                  type: "text",
+                },
+              ],
+              admin: {
+                condition: ({ modelType }) => modelType === "chat",
+              },
+            },
+            {
               name: "model",
               label: "Model",
               type: "text",

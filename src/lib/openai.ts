@@ -1,27 +1,25 @@
-// Import dependencies
-import { OpenAI as OpenAIClient } from "openai";
+import { OpenAI as OpenAIClient, ClientOptions } from "openai";
+import { Bot } from "payload/generated-types";
 
 // Define the Singleton class
 class OpenAI {
-  private static instance: OpenAIClient;
+  private static clients: Map<string, OpenAIClient> = new Map();
 
-  // Private constructor to prevent direct instantiation
-  private static createInstance(
-    apiKey: string = process.env.OPENAI_API_KEY
-  ): OpenAIClient {
-    return new OpenAIClient({
-      apiKey: apiKey,
-    });
-  }
+  public static getInstance(bot?: Bot): OpenAIClient {
+    const apiKey = bot?.apiKey || process.env.OPENAI_API_KEY;
+    const endpointUrl = bot?.endpointUrl;
+    const key = `${apiKey}_${endpointUrl || "default"}`;
 
-  // Static method to access the singleton instance
-  public static getInstance(apiKey?: string): OpenAIClient {
-    if (!OpenAI.instance) {
-      OpenAI.instance = OpenAI.createInstance(apiKey);
+    if (!this.clients.has(key)) {
+      const options: ClientOptions = { apiKey: apiKey };
+      if (endpointUrl) {
+        options.baseURL = endpointUrl;
+      }
+      const client = new OpenAIClient(options);
+      this.clients.set(key, client);
     }
-    return OpenAI.instance;
+    return this.clients.get(key);
   }
 }
 
-// Export the OpenAIWrapper class
 export default OpenAI;

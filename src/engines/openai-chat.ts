@@ -49,6 +49,36 @@ const describeImage = memoize(
   { maxAge: 60 * 60 * 1000 }
 );
 
+const describeEmbed = memoize(
+  async (text: string, model = "gpt-3.5-turbo") => {
+    const description = await OpenAI.getInstance().chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: 'Describe the following embed. When doing so, compress the text in a way that fits in a tweet (ideally) and such that you or another language model can reconstruct the intention of the human who wrote text as close as possible to the original intention. This is for yourself. It does not need to be human readable or understandable. Abuse of language mixing, abbreviations, symbols (unicode and emoji), or any other encodings or internal representations is all permissible, as long as it, if pasted in a new inference cycle, will yield near-identical results as the original embed'
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text,
+            },
+          ],
+        }
+      ],
+      model,
+      max_tokens: 2047,
+    });
+
+    console.dir(description, { depth: null });
+
+    return description.choices[0].message.content;
+  },
+  { maxAge: 60 * 60 * 1000 }
+);
+
+
 class OpenAIChatEngine extends TextEngine {
   constructor(payload: Payload) {
     super(payload);
@@ -128,7 +158,7 @@ class OpenAIChatEngine extends TextEngine {
         .map((a) => a.url);
 
       for (const attachment of msg.attachments.toJSON()) {
-        messageText += `\n[attachment] json: ${JSON.stringify(attachment)}`;
+        messageText += `\n[attachment] ${attachment.name} ${attachment.description} ${attachment.url}`;
 
         if (
           attachment.contentType?.startsWith("image") &&
@@ -146,13 +176,15 @@ class OpenAIChatEngine extends TextEngine {
       }
 
       for (const embed of msg.embeds) {
-        messageText += `\n[embed] json: ${JSON.stringify(embed)}`;
+        const description = await describeEmbed(embed.description);
+        messageText += `\n[embed] ${embed.url} ${description}`;
       }
 
       if (lastMessage && lastMessage.role === "user" && !isBot) {
-        const content = lastMessage.content as ChatCompletionContentPart[];
-        content[0].text += `\n${messageText}`;
         if (bot.enableVision && !bot.visionModel) {
+          const content = lastMessage.content as ChatCompletionContentPart[];
+          content[0].text += `\n${messageText}`;
+
           for (const url of imageUrls) {
             content.push({
               type: "image_url",
@@ -161,6 +193,8 @@ class OpenAIChatEngine extends TextEngine {
               },
             });
           }
+        } else {
+          lastMessage.content += `\n${messageText}`;
         }
       } else if (lastMessage && lastMessage.role === "assistant" && isBot) {
         lastMessage.content += `\n${messageText}`;
@@ -172,12 +206,12 @@ class OpenAIChatEngine extends TextEngine {
             content: messageText,
           };
         } else {
-          message = {
-            role: "user",
-            content: [{ type: "text", text: messageText }],
-          };
-
           if (bot.enableVision && !bot.visionModel) {
+            message = {
+              role: "user",
+              content: [{ type: "text", text: messageText }],
+            };
+
             for (const url of imageUrls) {
               (message.content as ChatCompletionContentPart[]).push({
                 type: "image_url",
@@ -186,6 +220,11 @@ class OpenAIChatEngine extends TextEngine {
                 },
               });
             }
+          } else {
+            message = {
+              role: "user",
+              content: messageText,
+            };
           }
         }
 
@@ -220,7 +259,7 @@ class OpenAIChatEngine extends TextEngine {
       const username = msg.author.username.replace(/[^a-zA-Z0-9_]/g, "");
 
       for (const attachment of msg.attachments.toJSON()) {
-        messageText += `\n[attachment] json: ${JSON.stringify(attachment)}`;
+        messageText += `\n[attachment] ${attachment.name} ${attachment.description} ${attachment.url}`;
 
         if (
           attachment.contentType?.startsWith("image") &&
@@ -238,11 +277,16 @@ class OpenAIChatEngine extends TextEngine {
       }
 
       for (const embed of msg.embeds) {
-        messageText += `\n[embed] json: ${JSON.stringify(embed)}`;
+        const description = await describeEmbed(embed.description);
+        messageText += `\n[embed] ${embed.url} ${description}`;
       }
 
       // @ts-ignore
-      if (lastMessage && lastMessage.role === 'user' && lastMessage.name === username) {
+      if (
+        lastMessage &&
+        lastMessage.role === "user" &&
+        lastMessage.name === username
+      ) {
         const content = lastMessage.content as ChatCompletionContentPart[];
         content[0].text += `\n${messageText}`;
         if (bot.enableVision && !bot.visionModel) {
@@ -310,18 +354,22 @@ class OpenAIChatEngine extends TextEngine {
     if (bot.primer) {
       const primerFn = bot.primer as Function;
       const func = convertFunction(primerFn);
-      const response = await OpenAI.getInstance().chat.completions.create({
+      const response = await OpenAI.getInstance(bot).chat.completions.create({
         messages: chatMessages,
         model: bot.model,
         max_tokens: 2047,
-        functions: [func],
-        function_call: { name: func.name },
+        tools: [func],
+        tool_choice: {
+          type: "function",
+          function: { name: func.function.name },
+        },
       });
 
       const msg = response.choices[0].message;
-      const call = JSON.parse(msg.function_call.arguments);
 
       if (primerFn.template) {
+        const call = JSON.parse(msg?.tool_calls?.[0]?.function.arguments || msg.content);
+
         // replace {{name}} with the value of the parameter
         const text = primerFn.template.replace(
           /{{(.*?)}}/g,
@@ -330,14 +378,14 @@ class OpenAIChatEngine extends TextEngine {
 
         chatMessages.push({
           role: "function",
-          name: func.name,
+          name: func.function.name,
           content: text,
         });
       } else {
         chatMessages.push({
           role: "function",
-          name: func.name,
-          content: msg.function_call.arguments,
+          name: func.function.name,
+          content: msg?.tool_calls?.[0]?.function.arguments || msg.content,
         });
       }
     }
@@ -347,16 +395,22 @@ class OpenAIChatEngine extends TextEngine {
     if (bot.responseTemplate) {
       const templateFn = bot.responseTemplate as Function;
       const func = convertFunction(templateFn);
-      const response = await OpenAI.getInstance().chat.completions.create({
+      const response = await OpenAI.getInstance(bot).chat.completions.create({
         messages: chatMessages,
         model: bot.model,
         max_tokens: 2047,
-        functions: [func],
-        function_call: { name: func.name },
+        tools: [func],
+        tool_choice: {
+          type: "function",
+          function: { name: func.function.name },
+        },
       });
 
       const msg = response.choices[0].message;
-      const call = JSON.parse(msg.function_call.arguments);
+
+      console.dir(msg, { depth: null });
+
+      const call = JSON.parse(msg?.tool_calls?.[0]?.function.arguments || msg.content);
 
       // replace {{name}} with the value of the parameter
       const text = templateFn.template.replace(
@@ -367,7 +421,7 @@ class OpenAIChatEngine extends TextEngine {
       return text;
     } else {
       try {
-        const response = await OpenAI.getInstance().chat.completions.create({
+        const response = await OpenAI.getInstance(bot).chat.completions.create({
           messages: chatMessages,
           model: bot.model,
           max_tokens: 2047,

@@ -25,6 +25,8 @@ export interface Bot {
   avatarUrl?: string | null;
   default?: boolean | null;
   modelType: 'chat' | 'completion' | 'endpoint';
+  endpointUrl?: string | null;
+  apiKey?: string | null;
   model: string;
   enableVision?: boolean | null;
   visionModel?: string | null;
