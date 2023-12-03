@@ -171,7 +171,7 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
     try {
       // handle image generation
       const result = botResponse.choices[0].message;
-      const args = JSON.parse(result.function_call.arguments);
+      const args = JSON.parse(result.tool_calls[0].function.arguments);
       console.dir(args, { depth: null });
 
       if (!args.shouldGenerate) return;
