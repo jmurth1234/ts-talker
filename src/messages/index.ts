@@ -134,9 +134,9 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
           content: `Last user message from ${message.author.username}: ${message.content}. Bot response: ${response}`,
         },
       ],
-      model: "gpt-3.5-turbo",
+      model: "gpt-4-1106-preview",
       max_tokens: 2047,
-      functions: [
+      tools: [
         convertFunction({
           name: "generate_image",
           description:
@@ -166,24 +166,21 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
           ],
         }),
       ],
-      function_call: {
-        name: "generate_image",
-      },
     });
 
-    // handle image generation
-    const result = botResponse.choices[0].message;
-    const args = JSON.parse(result.function_call.arguments);
-    console.dir(args, { depth: null });
-
-    if (!args.shouldGenerate) return;
-
     try {
+      // handle image generation
+      const result = botResponse.choices[0].message;
+      const args = JSON.parse(result.function_call.arguments);
+      console.dir(args, { depth: null });
+
+      if (!args.shouldGenerate) return;
+
       const image = await OpenAI.getInstance().images.generate({
-        model:bot.imageModel || "dall-e-2",
+        model: bot.imageModel || "dall-e-2",
         prompt: args.prompt,
         n: 1,
-        size: bot.imageSize || '512x512'
+        size: bot.imageSize || "512x512",
       });
 
       return image.data[0].url;
