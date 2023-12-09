@@ -50,7 +50,7 @@ const describeImage = memoize(
 );
 
 const describeEmbed = memoize(
-  async (text: string, model = "gpt-3.5-turbo") => {
+  async (text: string, model = "gpt-4-1106-preview") => {
     const description = await OpenAI.getInstance().chat.completions.create({
       messages: [
         {
@@ -176,7 +176,7 @@ class OpenAIChatEngine extends TextEngine {
       }
 
       for (const embed of msg.embeds) {
-        const description = await describeEmbed(embed.description);
+        const description = await describeEmbed(JSON.stringify(embed));
         messageText += `\n[embed] ${embed.url} ${description}`;
       }
 
@@ -277,7 +277,7 @@ class OpenAIChatEngine extends TextEngine {
       }
 
       for (const embed of msg.embeds) {
-        const description = await describeEmbed(embed.description);
+        const description = await describeEmbed(JSON.stringify(embed));
         messageText += `\n[embed] ${embed.url} ${description}`;
       }
 
@@ -434,7 +434,7 @@ class OpenAIChatEngine extends TextEngine {
           ? msg.substring(msg.indexOf("> ") + 2)
           : msg;
 
-        return filteredMsg;
+        return msg;
       } catch (error) {
         console.error("Error making the API request", error);
         return "";
