@@ -21,6 +21,7 @@ abstract class BaseEngine {
             !m.content.includes("I'm sorry") &&
             !m.content.includes("as an AI language model"))
       )
+      .reverse();
 
     function process(messages: Message[]): Message[] {
       const selectedMessages: Message[] = [];
