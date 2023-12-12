@@ -1,6 +1,7 @@
 import { Message } from "discord.js";
 import { Payload } from "payload";
 import didPing from "../lib/bot-mentioned";
+import { Bot } from "payload/generated-types";
 
 abstract class BaseEngine {
   payload: Payload;
@@ -9,8 +10,8 @@ abstract class BaseEngine {
     this.payload = payload;
   }
 
-  protected async getMessages(message: Message, bot: any): Promise<Message[]> {
-    const messages = await message.channel.messages.fetch({ limit: bot.limit });
+  protected async getMessages(message: Message, bot: Bot): Promise<Message[]> {
+    const messages = await message.channel.messages.fetch({ limit: 50 });
 
     let filtered = [...messages.toJSON()]
       .filter(
@@ -20,11 +21,25 @@ abstract class BaseEngine {
             !m.content.includes("I'm sorry") &&
             !m.content.includes("as an AI language model"))
       )
-      .reverse();
 
-    const previousMessage = filtered[filtered.length - 1];
+    function process(messages: Message[]): Message[] {
+      const selectedMessages: Message[] = [];
+      for (let i = messages.length - 1; i >= 0; i--) {
+        selectedMessages.push(messages[i]);
+        // Check if we have at least 5 messages and the first message in the selection is not from a bot
+        if (
+          selectedMessages.length >= bot.limit &&
+          !selectedMessages[selectedMessages.length - 1].author.bot &&
+          !selectedMessages[selectedMessages.length - 2].author.username.includes(bot.username)) {
+          break;
+        }
+      }
+      return selectedMessages.reverse();
+    }
 
-    if (message.id !== previousMessage?.id) {
+    filtered = process(filtered);
+
+    if (!filtered.find((m) => m.id === message.id)) {
       console.log("Message not found");
       filtered.push(message);
     }
