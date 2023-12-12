@@ -12,7 +12,7 @@ class EndpointEngine extends TextEngine {
   public override async getResponse(
     message: Message,
     bot: Bot
-  ): Promise<string> {
+  ) {
     const messages = await this.getTextMessages(message, bot);
 
     const stopSequence = bot.stopToken ? bot.stopToken : "\n[";
@@ -40,14 +40,18 @@ class EndpointEngine extends TextEngine {
         }
       }
 
-      filteredMsg = filteredMsg.includes("> ")
-        ? filteredMsg.substring(filteredMsg.indexOf("> ") + 2)
+      filteredMsg = filteredMsg.includes(">: ")
+        ? filteredMsg.substring(filteredMsg.indexOf(">: ") + 2)
         : filteredMsg;
 
-      return filteredMsg;
+      return {
+        response: filteredMsg
+      }
     } catch (error) {
       console.error("Error making the API request", error);
-      return "";
+      return {
+        response: ""
+      }
     }
   }
 }

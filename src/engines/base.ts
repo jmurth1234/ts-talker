@@ -4,6 +4,7 @@ import didPing from "../lib/bot-mentioned";
 
 abstract class BaseEngine {
   payload: Payload;
+
   constructor(payload: Payload) {
     this.payload = payload;
   }
@@ -74,7 +75,13 @@ abstract class BaseEngine {
     return filtered;
   }
 
-  public abstract getResponse(message: Message, bot: any): Promise<string>;
+  public abstract getResponse(
+    message: Message,
+    bot: any
+  ): Promise<{
+    response: string;
+    imageUrl?: string;
+  }>;
 }
 
 export default BaseEngine;

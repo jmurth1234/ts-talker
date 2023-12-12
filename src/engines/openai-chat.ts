@@ -18,7 +18,7 @@ Please write a suitable reply, only replying with the message
 
 The prompt is as follows:`;
 
-const describeImage = memoize(
+export const describeImage = memoize(
   async (url: string, model: string) => {
     const description = await OpenAI.getInstance().chat.completions.create({
       messages: [
@@ -49,13 +49,14 @@ const describeImage = memoize(
   { maxAge: 60 * 60 * 1000 }
 );
 
-const describeEmbed = memoize(
+export const describeEmbed = memoize(
   async (text: string, model = "gpt-4-1106-preview") => {
     const description = await OpenAI.getInstance().chat.completions.create({
       messages: [
         {
           role: "system",
-          content: 'Describe the following embed. When doing so, compress the text in a way that fits in a tweet (ideally) and such that you or another language model can reconstruct the intention of the human who wrote text as close as possible to the original intention. This is for yourself. It does not need to be human readable or understandable. Abuse of language mixing, abbreviations, symbols (unicode and emoji), or any other encodings or internal representations is all permissible, as long as it, if pasted in a new inference cycle, will yield near-identical results as the original embed'
+          content:
+            "Describe the following embed. When doing so, compress the text in a way that fits in a tweet (ideally) and such that you or another language model can reconstruct the intention of the human who wrote text as close as possible to the original intention. This is for yourself. It does not need to be human readable or understandable. Abuse of language mixing, abbreviations, symbols (unicode and emoji), or any other encodings or internal representations is all permissible, as long as it, if pasted in a new inference cycle, will yield near-identical results as the original embed",
         },
         {
           role: "user",
@@ -65,7 +66,7 @@ const describeEmbed = memoize(
               text,
             },
           ],
-        }
+        },
       ],
       model,
       max_tokens: 2047,
@@ -77,7 +78,6 @@ const describeEmbed = memoize(
   },
   { maxAge: 60 * 60 * 1000 }
 );
-
 
 class OpenAIChatEngine extends TextEngine {
   constructor(payload: Payload) {
@@ -151,7 +151,7 @@ class OpenAIChatEngine extends TextEngine {
       const content = bot.canPingUsers ? msg.content : msg.cleanContent;
       let messageText = isBot
         ? content
-        : `[${timestamp}] <${msg.author.username}> ${content}`;
+        : `[${timestamp}] <${msg.author.username}>: ${content}`;
 
       const imageUrls = msg.attachments
         .filter((a) => a.url && a.contentType?.startsWith("image"))
@@ -336,7 +336,7 @@ class OpenAIChatEngine extends TextEngine {
   public override async getResponse(
     message: Message,
     bot: Bot
-  ): Promise<string> {
+  ) {
     const messages = await this.getMessages(message, bot);
     const chatMessages: ChatCompletionMessageParam[] = [];
 
@@ -368,7 +368,9 @@ class OpenAIChatEngine extends TextEngine {
       const msg = response.choices[0].message;
 
       if (primerFn.template) {
-        const call = JSON.parse(msg?.tool_calls?.[0]?.function.arguments || msg.content);
+        const call = JSON.parse(
+          msg?.tool_calls?.[0]?.function.arguments || msg.content
+        );
 
         // replace {{name}} with the value of the parameter
         const text = primerFn.template.replace(
@@ -392,6 +394,8 @@ class OpenAIChatEngine extends TextEngine {
 
     console.dir(chatMessages, { depth: null });
 
+    let msg = ""
+
     if (bot.responseTemplate) {
       const templateFn = bot.responseTemplate as Function;
       const func = convertFunction(templateFn);
@@ -406,19 +410,19 @@ class OpenAIChatEngine extends TextEngine {
         },
       });
 
-      const msg = response.choices[0].message;
+      const reply = response.choices[0].message;
 
-      console.dir(msg, { depth: null });
+      console.dir(reply, { depth: null });
 
-      const call = JSON.parse(msg?.tool_calls?.[0]?.function.arguments || msg.content);
-
-      // replace {{name}} with the value of the parameter
-      const text = templateFn.template.replace(
-        /{{(.*?)}}/g,
-        (match, p1) => call[p1]
+      const call = JSON.parse(
+        reply?.tool_calls?.[0]?.function.arguments || reply.content
       );
 
-      return text;
+      // replace {{name}} with the value of the parameter
+      msg = templateFn.template.replace(
+          /{{(.*?)}}/g,
+          (match, p1) => call[p1]
+      );
     } else {
       try {
         const response = await OpenAI.getInstance(bot).chat.completions.create({
@@ -429,16 +433,20 @@ class OpenAIChatEngine extends TextEngine {
 
         console.dir(response, { depth: null });
 
-        var msg = response.choices[0].message.content;
-        var filteredMsg = msg.includes("> ")
-          ? msg.substring(msg.indexOf("> ") + 2)
+        msg = response.choices[0].message.content;
+        msg = msg.includes(">: ")
+          ? msg.substring(msg.indexOf(">: ") + 2)
           : msg;
-
-        return msg;
       } catch (error) {
         console.error("Error making the API request", error);
-        return "";
+        return {
+          response: ""
+        }
       }
+    }
+
+    return {
+      response: msg
     }
   }
 }

@@ -70,6 +70,10 @@ const Bots: CollectionConfig = {
                   value: "completion",
                 },
                 {
+                  label: "Mistral",
+                  value: "mistral",
+                },
+                {
                   label: "Custom Endpoint",
                   value: "endpoint",
                 },
@@ -82,6 +86,9 @@ const Bots: CollectionConfig = {
                   name: "endpointUrl",
                   label: "Endpoint URL",
                   type: "text",
+                  admin: {
+                    condition: ({ modelType }) => modelType === "chat",
+                  },
                 },
                 {
                   name: "apiKey",
@@ -90,7 +97,7 @@ const Bots: CollectionConfig = {
                 },
               ],
               admin: {
-                condition: ({ modelType }) => modelType === "chat",
+                condition: ({ modelType }) => modelType === "chat" || modelType === "mistral",
               },
             },
             {

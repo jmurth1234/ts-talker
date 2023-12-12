@@ -19,7 +19,7 @@ abstract class TextEngine extends BaseEngine {
 
     for (const msg of messages) {
       const timestamp = msg.createdAt.toISOString().replace('T', ' ').substring(0, 19);
-      chatMessages += `[${timestamp}] <${msg.author.username}> ${msg.cleanContent}`;
+      chatMessages += `[${timestamp}] <${msg.author.username}>: ${msg.cleanContent}`;
 
       for (const attachment of msg.attachments.toJSON()) {
         chatMessages += `\n[attachment] ${attachment.url} ${attachment.description || ''}`;

@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@faker-js/faker": "^8.3.1",
+    "@mistralai/mistralai": "^0.0.7",
     "@payloadcms/bundler-webpack": "^1.0.0",
     "@payloadcms/db-mongodb": "^1.0.0",
     "@payloadcms/plugin-cloud": "^2.0.0",

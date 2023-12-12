@@ -16,6 +16,7 @@ import EndpointEngine from "../engines/endpoint";
 import OpenAI from "../lib/openai";
 import convertFunction from "../lib/function-converter";
 import axios from "axios";
+import MistralEngine from "../engines/mistral";
 
 export async function setupMessageHandling(client: Client, payload: Payload) {
   client.on(Events.MessageCreate, async (interaction) => {
@@ -87,11 +88,8 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
     await message.channel.sendTyping();
 
     const engine = getEngine(bot.modelType);
-
     const reply = await engine.getResponse(message, bot);
-
-    const filteredReply = await filterPings(reply);
-
+    const filteredReply = await filterPings(reply.response);
     const image = await generateImageIfRelevant(bot, message, filteredReply);
 
     if (message.channel.type === ChannelType.GuildText) {
@@ -198,6 +196,8 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
         return new OpenAITextEngine(payload);
       case "endpoint":
         return new EndpointEngine(payload);
+      case "mistral":
+        return new MistralEngine(payload);
       default:
         throw new Error("Invalid model type");
     }
