@@ -287,9 +287,10 @@ class OpenAIChatEngine extends TextEngine {
         lastMessage.role === "user" &&
         lastMessage.name === username
       ) {
-        const content = lastMessage.content as ChatCompletionContentPart[];
-        content[0].text += `\n${messageText}`;
         if (bot.enableVision && !bot.visionModel) {
+          const content = lastMessage.content as ChatCompletionContentPart[];
+          content[0].text += `\n${messageText}`;
+
           for (const url of imageUrls) {
             content.push({
               type: "image_url",
@@ -298,6 +299,8 @@ class OpenAIChatEngine extends TextEngine {
               },
             });
           }
+        } else {
+          lastMessage.content += `\n${messageText}`;
         }
       } else if (lastMessage && lastMessage.role === "assistant" && isBot) {
         lastMessage.content += `\n${messageText}`;
@@ -310,13 +313,13 @@ class OpenAIChatEngine extends TextEngine {
             content: messageText,
           };
         } else {
-          message = {
-            role: "user",
-            name: username,
-            content: [{ type: "text", text: messageText }],
-          };
-
           if (bot.enableVision && !bot.visionModel) {
+            message = {
+              role,
+              name: username,
+              content: [{ type: "text", text: messageText }],
+            };
+
             for (const url of imageUrls) {
               (message.content as ChatCompletionContentPart[]).push({
                 type: "image_url",
@@ -325,6 +328,12 @@ class OpenAIChatEngine extends TextEngine {
                 },
               });
             }
+          } else {
+            message = {
+              role,
+              name: username,
+              content: messageText,
+            };
           }
         }
 
