@@ -365,6 +365,8 @@ class OpenAIChatEngine extends TextEngine {
         },
       });
 
+      console.dir(response, {depth: null})
+
       const msg = response.choices[0].message;
 
       if (primerFn.template) {
