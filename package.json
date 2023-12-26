@@ -28,7 +28,8 @@
     "express": "^4.17.1",
     "openai": "^4.17.4",
     "payload": "^2.0.0",
-    "promise-memoize": "^1.2.1"
+    "promise-memoize": "^1.2.1",
+    "replicate": "^0.25.2"
   },
   "devDependencies": {
     "@types/express": "^4.17.9",
