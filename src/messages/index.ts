@@ -87,27 +87,46 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
     const engine = getEngine(bot.modelType);
     const reply = await engine.getResponse(message, bot);
     const filteredReply = await filterPings(reply.response);
+    const splitMessages = splitMessage(filteredReply);
     const image = await generateImageIfRelevant(bot, message, filteredReply);
 
     if (message.channel.type === ChannelType.GuildText) {
       const webhook = await getWebhook(message.channel as TextChannel, bot);
       const avatarURL = bot.avatarUrl || client.user!.avatarURL();
 
-      // download image if relevant
-      await webhook.send({
-        content: filteredReply,
-        username: bot.username,
-        avatarURL,
-        files: image
+      for (let i = 0; i < splitMessages.length; i++) {
+        const isLastMessage = i === splitMessages.length - 1;
+        const splitMessage = splitMessages[i];
+        await webhook.send({
+          content: splitMessage,
+          username: bot.username,
+          avatarURL,
+          files: image && isLastMessage
           ? [
               await axios
                 .get(image, { responseType: "arraybuffer" })
                 .then((response) => response.data),
             ]
           : undefined,
-      });
+        });
+      }
+
     } else {
-      await message.reply(filteredReply);
+      for (let i = 0; i < splitMessages.length; i++) {
+        const isLastMessage = i === splitMessages.length - 1;
+        const sendMessage = i === 0 ? message.reply : message.channel.send;
+        const splitMessage = splitMessages[i];
+        await sendMessage({
+          content: splitMessage,
+          files: image && isLastMessage
+          ? [
+              await axios
+                .get(image, { responseType: "arraybuffer" })
+                .then((response) => response.data),
+            ]
+          : undefined,
+        });
+      }
     }
   }
 
@@ -272,5 +291,54 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
     }
 
     return messageContent;
+  }
+
+  /**
+   * Split a message into multiple messages if it is too long. Discord has a limit of 2000 characters per message.
+   * If a message is longer than that, it will be split into multiple messages, using line breaks as a guide.
+   * If in the middle of a code block, it will split the code block.
+  
+   * @param message 
+   * @returns an array of messages that are less than 2000 characters long
+   */
+  function splitMessage(message: string): string[] {
+    const messages: string[] = [];
+    const lines = message.split("\n");
+    let currentMessage = "";
+    let inCodeBlock = false;
+    let codeBlockLanguage = "";
+
+    for (const line of lines) {
+      if (line.startsWith("```")) {
+        if (inCodeBlock) {
+          currentMessage += "```";
+          messages.push(currentMessage);
+          currentMessage = "";
+          inCodeBlock = false;
+          codeBlockLanguage = "";
+        } else {
+          inCodeBlock = true;
+          codeBlockLanguage = line.replace("```", "");
+          currentMessage += "```" + codeBlockLanguage + "\n";
+        }
+      } else if (currentMessage.length + line.length > 2000) {
+        if (inCodeBlock) {
+          currentMessage += "```";
+          messages.push(currentMessage);
+          currentMessage = "```" + codeBlockLanguage + "\n";
+        } else {
+          messages.push(currentMessage);
+          currentMessage = "";
+        }
+      }
+
+      currentMessage += line + "\n";
+    }
+
+    if (currentMessage.length > 0) {
+      messages.push(currentMessage);
+    }
+
+    return messages;
   }
 }
