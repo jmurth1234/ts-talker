@@ -1,12 +1,21 @@
 import { Message } from "discord.js";
 import { Bot } from "payload/generated-types";
 
-export default async function didPing(message: Message, bot: Bot) {
-  if (message.cleanContent.includes(`@${bot.username}`)) {
+export default async function didPing(
+  message: Message,
+  bot: Bot
+): Promise<boolean> {
+  const lowerCaseBotUsername = bot.username.toLowerCase();
+
+  if (message.cleanContent.toLowerCase().includes(`@${lowerCaseBotUsername}`)) {
     return true;
   }
 
-  if (message.mentions.users.some((u) => u.username === bot.username)) {
+  if (
+    message.mentions.users.some(
+      (u) => u.username.toLowerCase() === lowerCaseBotUsername
+    )
+  ) {
     return true;
   }
 
@@ -16,12 +25,15 @@ export default async function didPing(message: Message, bot: Bot) {
     );
 
     if (referencedMessage) {
-      return referencedMessage.author.username === bot.username;
+      return (
+        referencedMessage.author.username.toLowerCase() === lowerCaseBotUsername
+      );
     }
   }
 
+  // Check if the bot is mentioned by ID and is the default bot
   if (
-    message.mentions.users.some((u) => u.id === message.client.user.id) &&
+    message.mentions.users.some((u) => u.id === message.client.user?.id) &&
     bot.default
   ) {
     return true;
