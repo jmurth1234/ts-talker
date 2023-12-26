@@ -10,7 +10,7 @@ import {
 import convertFunction from "../lib/function-converter";
 import memoize from "promise-memoize";
 
-const basePrompt = `You are a discord bot designed to perform different prompts. The following will contain:
+const basePrompt = `You are a discord bot. You are designed to perform different prompts. The following will contain:
 - the prompt -- you should follow this as much as possible
 - at least one message from the channel, in the format [timestamp] <username>: message
 - If a message has embeds or attachments, they will be included in the prompt as well under the message as [embed] or [attachment]
@@ -92,6 +92,7 @@ class OpenAIChatEngine extends TextEngine {
     }
 
     if (bot.canPingUsers) {
+      prompt += "\n\nThe following users are in the chat:";
       for (const msg of messages) {
         if (msg.author.bot) {
           continue;
@@ -130,6 +131,8 @@ class OpenAIChatEngine extends TextEngine {
           "\nUse the <@id> to ping them in the chat. Include the angle brackets, and the ID must be numerical.";
       }
     }
+
+    prompt += `Your name is ${bot.username}. Current time is ${new Date().toISOString().replace('T', ' ').substring(0, 19)}.`;
 
     return prompt;
   }

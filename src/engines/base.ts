@@ -30,8 +30,10 @@ abstract class BaseEngine {
         // Check if we have at least 5 messages and the first message in the selection is not from a bot
         if (
           selectedMessages.length >= bot.limit &&
-          !selectedMessages[selectedMessages.length - 1].author.bot &&
-          !selectedMessages[selectedMessages.length - 2].author.username.includes(bot.username)) {
+          !selectedMessages[
+            selectedMessages.length - 2
+          ].author.username.includes(bot.username)
+        ) {
           break;
         }
       }
