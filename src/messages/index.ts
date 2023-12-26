@@ -22,10 +22,7 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
   client.on(Events.MessageCreate, async (interaction) => {
     try {
       const message = interaction as Message;
-      if (
-        !message.author.bot &&
-        message.channel.type === ChannelType.GuildText
-      ) {
+      if (message.channel.type === ChannelType.GuildText) {
         await messageReceived(message);
       }
     } catch (error) {
