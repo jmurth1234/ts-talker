@@ -311,6 +311,8 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
     let inCodeBlock = false;
     let codeBlockLanguage = "";
 
+    if (message.length <= 2000) return [message];
+
     for (const line of lines) {
       if (line.startsWith("```")) {
         if (inCodeBlock) {
