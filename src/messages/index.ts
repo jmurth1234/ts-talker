@@ -79,6 +79,9 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
   }
 
   async function handleReply(message: Message, bot: Bot) {
+    // prevent bots from replying to themselves
+    if (message.author.username.includes(bot.username)) return;
+
     // wait a second for links to be unfurled
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
