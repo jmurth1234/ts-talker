@@ -299,8 +299,19 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
   /**
    * Split a message into multiple messages if it is too long. Discord has a limit of 2000 characters per message.
    * If a message is longer than that, it will be split into multiple messages, using line breaks as a guide.
-   * If in the middle of a code block, it will split the code block.
-  
+   * If in the middle of a code block, it will split the code block. i.e. 
+   * ```
+   * This is a code block
+   * that is too long
+   * ```
+   * will be split into
+   * ```
+   * This is a code block
+   * ```
+   * 
+   * ```
+   * that is too long
+   * ```
    * @param message 
    * @returns an array of messages that are less than 2000 characters long
    */
@@ -323,21 +334,25 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
           codeBlockLanguage = "";
         } else {
           inCodeBlock = true;
-          codeBlockLanguage = line.replace("```", "");
+          codeBlockLanguage = line.substring(3);
           currentMessage += "```" + codeBlockLanguage + "\n";
         }
-      } else if (currentMessage.length + line.length > 2000) {
+      } else {
         if (inCodeBlock) {
-          currentMessage += "```";
-          messages.push(currentMessage);
-          currentMessage = "```" + codeBlockLanguage + "\n";
+          if (currentMessage.length + line.length + 1 > 2000) {
+            currentMessage += "```";
+            messages.push(currentMessage);
+            currentMessage = "```" + codeBlockLanguage + "\n";
+          }
+          currentMessage += line + "\n";
         } else {
-          messages.push(currentMessage);
-          currentMessage = "";
+          if (currentMessage.length + line.length + 1 > 2000) {
+            messages.push(currentMessage);
+            currentMessage = "";
+          }
+          currentMessage += line + "\n";
         }
       }
-
-      currentMessage += line + "\n";
     }
 
     if (currentMessage.length > 0) {
