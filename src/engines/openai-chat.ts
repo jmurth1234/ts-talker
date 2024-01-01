@@ -79,6 +79,29 @@ export const describeEmbed = memoize(
   { maxAge: 60 * 60 * 1000 }
 );
 
+export const askQuestion = memoize(
+  async (question: string) => {
+    // this uses perplexity ai always, pplx-7b-online
+    const response = await OpenAI.getInstance({
+      apiKey: process.env.PERPLEXITY_API_KEY,
+      endpointUrl: 'https://api.perplexity.ai'
+    }).chat.completions.create({
+      messages: [
+        {
+          role: "user",
+          content: 'Answer the following question, add urls as much detail as possible. If you do not know the answer, you can say "I do not know". ' + question,
+        },
+      ],
+      model: "pplx-7b-online",
+      max_tokens: 2047,
+    });
+
+    console.dir(response, { depth: null });
+
+    return response.choices[0].message.content;
+  }
+);
+
 class OpenAIChatEngine extends TextEngine {
   constructor(payload: Payload) {
     super(payload);
@@ -400,6 +423,52 @@ class OpenAIChatEngine extends TextEngine {
           role: "function",
           name: func.function.name,
           content: msg?.tool_calls?.[0]?.function.arguments || msg.content,
+        });
+      }
+    }
+
+    if (bot.canLookup) {
+      const lookupFn = convertFunction({
+        id: "lookup",
+        name: "lookup",
+        description: "Perform a lookup to find information from the web if necessary. Don't mention the bot in the message, just ask the question.",
+        parameters: [
+          {
+            name: "text",
+            type: "string",
+            description: "The question to ask -- a secondary AI model will be used to answer this question",
+            required: false,
+          },
+        ],
+      });
+
+      const response = await OpenAI.getInstance(bot).chat.completions.create({
+        messages: chatMessages,
+        model: 'gpt-3.5-turbo-1106',
+        max_tokens: 2047,
+        tools: [lookupFn],
+        tool_choice: {
+          type: "function",
+          function: { name: lookupFn.function.name },
+        },
+      });
+
+      const msg = response.choices[0].message;
+
+      const call = JSON.parse(
+        msg?.tool_calls?.[0]?.function.arguments || msg.content
+      );
+
+      if (call.text) {
+        chatMessages.push(response.choices[0].message);
+
+        const answer = await askQuestion(call.text);
+
+        chatMessages.push({
+          role: "tool",
+          tool_call_id: msg?.tool_calls?.[0]?.id,
+          // name: lookupFn.function.name,
+          content: answer,
         });
       }
     }

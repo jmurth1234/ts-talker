@@ -5,7 +5,7 @@ import { Bot } from "payload/generated-types";
 class OpenAI {
   private static clients: Map<string, OpenAIClient> = new Map();
 
-  public static getInstance(bot?: Bot): OpenAIClient {
+  public static getInstance(bot?: Partial<Bot>): OpenAIClient {
     const apiKey = bot?.apiKey || process.env.OPENAI_API_KEY;
     const endpointUrl = bot?.endpointUrl;
     const key = `${apiKey}_${endpointUrl || "default"}`;

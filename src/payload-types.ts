@@ -24,7 +24,7 @@ export interface Bot {
   prompt: string;
   avatarUrl?: string | null;
   default?: boolean | null;
-  modelType: 'chat' | 'completion' | 'endpoint';
+  modelType: 'chat' | 'completion' | 'mistral' | 'endpoint';
   endpointUrl?: string | null;
   apiKey?: string | null;
   model: string;
@@ -43,6 +43,7 @@ export interface Bot {
   canPostImages?: boolean | null;
   imageModel?: string | null;
   imageSize?: ('256x256' | '512x512' | '1024x1024' | '1792x1024' | '1024x1792') | null;
+  canLookup?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
