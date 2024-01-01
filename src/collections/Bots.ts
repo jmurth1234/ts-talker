@@ -257,7 +257,20 @@ const Bots: CollectionConfig = {
                   ],
                 },
               ],
-            }
+            },
+
+            
+            {
+              name: "canLookup",
+              label: "Can Lookup",
+              type: "checkbox",
+              defaultValue: false,
+              admin: {
+                description:
+                  "This will allow the bot to use Perplexity AI to lookup data.",
+              },
+            },
+
           ],
         },
       ],
