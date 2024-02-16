@@ -468,7 +468,7 @@ class OpenAIChatEngine extends TextEngine {
           role: "tool",
           tool_call_id: msg?.tool_calls?.[0]?.id,
           // name: lookupFn.function.name,
-          content: answer,
+          content: `The AI model says: ${answer}. This is not shown to the user, so you must use the response to craft a reply.`,
         });
       }
     }
