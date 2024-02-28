@@ -92,7 +92,7 @@ export const askQuestion = memoize(
           content: 'Answer the following question, add urls as much detail as possible. If you do not know the answer, you can say "I do not know". ' + question,
         },
       ],
-      model: "pplx-7b-online",
+      model: "sonar-medium-chat",
       max_tokens: 2047,
     });
 
