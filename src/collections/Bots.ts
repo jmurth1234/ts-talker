@@ -74,6 +74,10 @@ const Bots: CollectionConfig = {
                   value: "mistral",
                 },
                 {
+                  label: "Anthropic",
+                  value: "anthropic",
+                },
+                {
                   label: "Custom Endpoint",
                   value: "endpoint",
                 },
@@ -97,7 +101,8 @@ const Bots: CollectionConfig = {
                 },
               ],
               admin: {
-                condition: ({ modelType }) => modelType === "chat" || modelType === "mistral",
+                condition: ({ modelType }) =>
+                  modelType === "chat" || modelType === "mistral",
               },
             },
             {
@@ -135,6 +140,22 @@ const Bots: CollectionConfig = {
           ],
         },
         {
+          label: "Huge Context Prompt (for Anthropic)",
+          admin: {
+            condition: (_, { modelType }) => modelType === "anthropic",
+            description:
+              "Anthropic bots can be steered by a mega prompt. This is a prompt that will be added to the end of the system prompt before sending it to the bot.",
+          },
+          fields: [
+            {
+              name: "anthropicPrompt",
+              label: "Anthropic Prompt",
+              type: "code",
+              defaultValue: "",
+            },
+          ],
+        },
+        {
           label: "Advanced Settings",
           fields: [
             {
@@ -161,7 +182,7 @@ const Bots: CollectionConfig = {
               name: "chance",
               label: "Chance",
               type: "number",
-              defaultValue: 0.5,
+              defaultValue: 0.001,
             },
             {
               name: "limit",
@@ -219,7 +240,7 @@ const Bots: CollectionConfig = {
             },
 
             {
-              type: 'row',
+              type: "row",
               admin: {
                 condition: ({ canPostImages }) => canPostImages,
               },
@@ -259,7 +280,6 @@ const Bots: CollectionConfig = {
               ],
             },
 
-            
             {
               name: "canLookup",
               label: "Can Lookup",
@@ -270,7 +290,6 @@ const Bots: CollectionConfig = {
                   "This will allow the bot to use Perplexity AI to lookup data.",
               },
             },
-
           ],
         },
       ],

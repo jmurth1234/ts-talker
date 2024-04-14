@@ -444,7 +444,7 @@ class OpenAIChatEngine extends TextEngine {
 
       const response = await OpenAI.getInstance(bot).chat.completions.create({
         messages: chatMessages,
-        model: 'gpt-3.5-turbo-1106',
+        model: 'gpt-4-turbo',
         max_tokens: 2047,
         tools: [lookupFn],
         tool_choice: {
@@ -468,7 +468,7 @@ class OpenAIChatEngine extends TextEngine {
           role: "tool",
           tool_call_id: msg?.tool_calls?.[0]?.id,
           // name: lookupFn.function.name,
-          content: `The AI model says: ${answer}. This is not shown to the user, so you must use the response to craft a reply.`,
+          content: `The lookup model says: ${answer}. This is not shown to the user, so you must use the response to craft a reply.`,
         });
       }
     }
