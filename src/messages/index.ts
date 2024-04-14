@@ -60,6 +60,19 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
         bot = b;
         break;
       }
+
+      // see if the message matches a per user config on the bot
+      if (b.perUserBehavior) {
+        const perUserBehavior = b.perUserBehavior.find(
+          (pb) => pb.id === message.author.id
+        );
+
+        // and check the chance
+        if (perUserBehavior && perUserBehavior.chance >= Math.random()) {
+          bot = b;
+          break;
+        }
+      }
     }
 
     if (!bot) {
@@ -67,7 +80,7 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
       const randomBot =
         activeBots[Math.floor(Math.random() * activeBots.length)];
 
-      if (randomBot.chance > Math.random()) {
+      if (randomBot.chance >= Math.random()) {
         bot = randomBot;
       }
     }
