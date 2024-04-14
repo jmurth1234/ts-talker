@@ -17,6 +17,10 @@ export interface Config {
   };
   globals: {};
 }
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "bots".
+ */
 export interface Bot {
   id: string;
   channelId: string;
@@ -24,13 +28,14 @@ export interface Bot {
   prompt: string;
   avatarUrl?: string | null;
   default?: boolean | null;
-  modelType: 'chat' | 'completion' | 'mistral' | 'endpoint';
+  modelType: 'chat' | 'completion' | 'mistral' | 'anthropic' | 'endpoint';
   endpointUrl?: string | null;
   apiKey?: string | null;
   model: string;
   enableVision?: boolean | null;
   visionModel?: string | null;
   fineTuned?: boolean | null;
+  anthropicPrompt?: string | null;
   primer?: (string | null) | Function;
   responseTemplate?: (string | null) | Function;
   chance?: number | null;
@@ -47,6 +52,10 @@ export interface Bot {
   updatedAt: string;
   createdAt: string;
 }
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "functions".
+ */
 export interface Function {
   id: string;
   name: string;
@@ -68,6 +77,10 @@ export interface Function {
   updatedAt: string;
   createdAt: string;
 }
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users".
+ */
 export interface User {
   id: string;
   isAdmin?: boolean | null;
@@ -87,6 +100,10 @@ export interface User {
   lockUntil?: string | null;
   password: string | null;
 }
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "channels".
+ */
 export interface Channel {
   id: string;
   channelId: string;
@@ -94,6 +111,10 @@ export interface Channel {
   updatedAt: string;
   createdAt: string;
 }
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-preferences".
+ */
 export interface PayloadPreference {
   id: string;
   user: {
@@ -113,6 +134,10 @@ export interface PayloadPreference {
   updatedAt: string;
   createdAt: string;
 }
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-migrations".
+ */
 export interface PayloadMigration {
   id: string;
   name?: string | null;

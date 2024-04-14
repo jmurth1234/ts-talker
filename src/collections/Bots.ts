@@ -150,8 +150,7 @@ const Bots: CollectionConfig = {
             {
               name: "anthropicPrompt",
               label: "Anthropic Prompt",
-              type: "code",
-              defaultValue: "",
+              type: "code"
             },
           ],
         },
