@@ -79,28 +79,28 @@ export const describeEmbed = memoize(
   { maxAge: 60 * 60 * 1000 }
 );
 
-export const askQuestion = memoize(
-  async (question: string) => {
-    // this uses perplexity ai always, pplx-7b-online
-    const response = await OpenAI.getInstance({
-      apiKey: process.env.PERPLEXITY_API_KEY,
-      endpointUrl: 'https://api.perplexity.ai'
-    }).chat.completions.create({
-      messages: [
-        {
-          role: "user",
-          content: 'Answer the following question, add urls as much detail as possible. If you do not know the answer, you can say "I do not know". ' + question,
-        },
-      ],
-      model: "sonar-medium-chat",
-      max_tokens: 2047,
-    });
+export const askQuestion = memoize(async (question: string) => {
+  // this uses perplexity ai always, pplx-7b-online
+  const response = await OpenAI.getInstance({
+    apiKey: process.env.PERPLEXITY_API_KEY,
+    endpointUrl: "https://api.perplexity.ai",
+  }).chat.completions.create({
+    messages: [
+      {
+        role: "user",
+        content:
+          'Answer the following question, add urls as much detail as possible. If you do not know the answer, you can say "I do not know". ' +
+          question,
+      },
+    ],
+    model: "sonar-medium-chat",
+    max_tokens: 2047,
+  });
 
-    console.dir(response, { depth: null });
+  console.dir(response, { depth: null });
 
-    return response.choices[0].message.content;
-  }
-);
+  return response.choices[0].message.content;
+});
 
 class OpenAIChatEngine extends TextEngine {
   constructor(payload: Payload) {
@@ -109,9 +109,19 @@ class OpenAIChatEngine extends TextEngine {
 
   private formatPrompt(bot: Bot, messages: Message[]) {
     let prompt = bot.prompt || "";
+    let lastMessage = messages[messages.length - 1];
+    let userBehavior = bot.perUserBehavior.find(
+      (b) => b.id === lastMessage.author.id
+    );
+
+    console.log(bot.perUserBehavior);
 
     if (!bot.fineTuned) {
       prompt = `${basePrompt} ${prompt}`;
+    }
+
+    if (userBehavior) {
+      prompt += userBehavior.prompt;
     }
 
     if (bot.canPingUsers) {
@@ -155,7 +165,12 @@ class OpenAIChatEngine extends TextEngine {
       }
     }
 
-    prompt += `Your name is ${bot.username}. Current time is ${new Date().toISOString().replace('T', ' ').substring(0, 19)}.`;
+    prompt += `Your name is ${bot.username}. Current time is ${new Date()
+      .toISOString()
+      .replace("T", " ")
+      .substring(0, 19)}.`;
+
+    console.log(prompt, userBehavior);
 
     return prompt;
   }
@@ -368,10 +383,7 @@ class OpenAIChatEngine extends TextEngine {
     }
   }
 
-  public override async getResponse(
-    message: Message,
-    bot: Bot
-  ) {
+  public override async getResponse(message: Message, bot: Bot) {
     const messages = await this.getMessages(message, bot);
     const chatMessages: ChatCompletionMessageParam[] = [];
 
@@ -400,7 +412,7 @@ class OpenAIChatEngine extends TextEngine {
         },
       });
 
-      console.dir(response, {depth: null})
+      console.dir(response, { depth: null });
 
       const msg = response.choices[0].message;
 
@@ -433,12 +445,14 @@ class OpenAIChatEngine extends TextEngine {
       const lookupFn = convertFunction({
         id: "lookup",
         name: "lookup",
-        description: "Perform a lookup to find information from the web if necessary. Don't mention the bot in the message, just ask the question.",
+        description:
+          "Perform a lookup to find information from the web if necessary. Don't mention the bot in the message, just ask the question.",
         parameters: [
           {
             name: "text",
             type: "string",
-            description: "The question to ask -- a secondary AI model will be used to answer this question",
+            description:
+              "The question to ask -- a secondary AI model will be used to answer this question",
             required: false,
           },
         ],
@@ -446,38 +460,39 @@ class OpenAIChatEngine extends TextEngine {
 
       const response = await OpenAI.getInstance(bot).chat.completions.create({
         messages: chatMessages,
-        model: 'gpt-4-turbo',
+        model: "gpt-4-turbo",
         max_tokens: 2047,
         tools: [lookupFn],
-        tool_choice: {
-          type: "function",
-          function: { name: lookupFn.function.name },
-        },
       });
 
       const msg = response.choices[0].message;
 
-      const call = JSON.parse(
-        msg?.tool_calls?.[0]?.function.arguments || msg.content
-      );
+      try {
+        const call = JSON.parse(
+          msg?.tool_calls?.[0]?.function.arguments || msg.content
+        );
 
-      if (call.text) {
-        chatMessages.push(response.choices[0].message);
+        if (call.text) {
+          chatMessages.push(response.choices[0].message);
 
-        const answer = await askQuestion(call.text);
+          const answer = await askQuestion(call.text);
 
-        chatMessages.push({
-          role: "tool",
-          tool_call_id: msg?.tool_calls?.[0]?.id,
-          // name: lookupFn.function.name,
-          content: `The lookup model says: ${answer}. This is not shown to the user, so you must use the response to craft a reply.`,
-        });
+          chatMessages.push({
+            role: "tool",
+            tool_call_id: msg?.tool_calls?.[0]?.id,
+            // name: lookupFn.function.name,
+            content: `The lookup model says: ${answer}. This is not shown to the user, so you must use the response to craft a reply.`,
+          });
+        }
+      } catch (error) {
+        // probably no lookup needed
+        console.error(error);
       }
     }
 
     console.dir(chatMessages, { depth: null });
 
-    let msg = ""
+    let msg = "";
 
     if (bot.responseTemplate) {
       const templateFn = bot.responseTemplate as Function;
@@ -502,10 +517,7 @@ class OpenAIChatEngine extends TextEngine {
       );
 
       // replace {{name}} with the value of the parameter
-      msg = templateFn.template.replace(
-          /{{(.*?)}}/g,
-          (match, p1) => call[p1]
-      );
+      msg = templateFn.template.replace(/{{(.*?)}}/g, (match, p1) => call[p1]);
     } else {
       try {
         const response = await OpenAI.getInstance(bot).chat.completions.create({
@@ -517,20 +529,18 @@ class OpenAIChatEngine extends TextEngine {
         console.dir(response, { depth: null });
 
         msg = response.choices[0].message.content;
-        msg = msg.includes(">: ")
-          ? msg.substring(msg.indexOf(">: ") + 2)
-          : msg;
+        msg = msg.includes(">: ") ? msg.substring(msg.indexOf(">: ") + 2) : msg;
       } catch (error) {
         console.error("Error making the API request", error);
         return {
-          response: ""
-        }
+          response: "",
+        };
       }
     }
 
     return {
-      response: msg
-    }
+      response: msg,
+    };
   }
 }
 

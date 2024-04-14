@@ -150,7 +150,7 @@ const Bots: CollectionConfig = {
             {
               name: "anthropicPrompt",
               label: "Anthropic Prompt",
-              type: "code"
+              type: "code",
             },
           ],
         },
@@ -182,6 +182,32 @@ const Bots: CollectionConfig = {
               label: "Chance",
               type: "number",
               defaultValue: 0.001,
+            },
+            {
+              name: "perUserBehavior",
+              label: "Per User Behavior",
+              type: "array",
+              fields: [
+                {
+                  name: "id",
+                  label: "ID",
+                  type: "text",
+                  required: true,
+                },
+                {
+                  name: "chance",
+                  label: "Chance",
+                  type: "number",
+                  defaultValue: 0.001,
+                },
+                {
+                  name: "prompt",
+                  label: "Prompt",
+                  type: "textarea",
+                  required: true,
+                  defaultValue: "Will be appended to the end of the prompt.",
+                },
+              ],
             },
             {
               name: "limit",

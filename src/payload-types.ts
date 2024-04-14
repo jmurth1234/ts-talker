@@ -39,6 +39,13 @@ export interface Bot {
   primer?: (string | null) | Function;
   responseTemplate?: (string | null) | Function;
   chance?: number | null;
+  perUserBehavior?:
+    | {
+        id: string | null;
+        chance?: number | null;
+        prompt: string;
+      }[]
+    | null;
   limit?: number | null;
   ignorePings?: boolean | null;
   stopToken?: string | null;
