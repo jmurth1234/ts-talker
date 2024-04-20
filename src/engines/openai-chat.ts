@@ -52,11 +52,12 @@ export const describeImage = memoize(
             {
               type: "text",
               text:
-                "Describe the image as succinctly as possible. When doing so, compress the text in a way that fits in a tweet (ideally). This is for yourself. It does not need to be human readable or understandable. Ensure the whole image is described. Abuse of language mixing, abbreviations, symbols, or any other encodings or internal representations is all permissible, as long as it, if pasted in a new inference cycle, will yield near-identical results as the original image.",
+                "Describe the image as succinctly as possible. When doing so, compress the text in a way that fits in a tweet (ideally). This is for yourself. It should be human readable. Ensure the whole image is described. Abuse of language mixing, abbreviations, symbols, or any other encodings or internal representations is all permissible, as long as it, if pasted in a new inference cycle, will yield near-identical results as the original image.",
             },
           ],
         },
       ],
+      temperature: 0,
       model,
       max_tokens: 2047,
     });
@@ -71,7 +72,7 @@ export const describeImage = memoize(
 export const describeEmbed = memoize(
   async (text: string, model = "claude-3-haiku-20240307") => {
     const description = await Anthropic.getInstance().messages.create({
-      system: "Describe the following embed. When doing so, compress the text in a way that fits in a tweet (ideally) and such that you or another language model can reconstruct the intention of the human who wrote text as close as possible to the original intention. This is for yourself. It does not need to be human readable or understandable. Abuse of language mixing, abbreviations, symbols, or any other encodings or internal representations is all permissible, as long as it, if pasted in a new inference cycle, will yield near-identical results as the original embed",
+      system: "Describe the following embed. When doing so, compress the text in a way that fits in a tweet (ideally) and such that you or another language model can reconstruct the intention of the human who wrote text as close as possible to the original intention. This is for yourself. It should be human readable.  Abuse of language mixing, abbreviations, symbols, or any other encodings or internal representations is all permissible, as long as it, if pasted in a new inference cycle, will yield near-identical results as the original embed",
       messages: [
         {
           role: "user",
@@ -227,7 +228,7 @@ class OpenAIChatEngine extends TextEngine {
             bot.visionModel
           );
 
-          messageText += ` this is a text only representation of the image as described by another ai: : ${description}`;
+          messageText += ` this is a text only representation of the image as described by another ai: : ${description}. pretend you saw the real image`;
         }
       }
 
@@ -328,7 +329,7 @@ class OpenAIChatEngine extends TextEngine {
             bot.visionModel
           );
 
-          messageText += ` this is a text only representation of the image as described by another ai: : ${description}`;
+          messageText += ` this is a text only representation of the image as described by another ai: : ${description}. pretend you saw the real image`;
         }
       }
 
