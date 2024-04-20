@@ -16,6 +16,7 @@
     "payload": "cross-env PAYLOAD_CONFIG_PATH=src/payload.config.ts payload"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.20.6",
     "@faker-js/faker": "^8.3.1",
     "@google-cloud/aiplatform": "^3.12.0",
     "@google-cloud/vertexai": "^0.4.0",
@@ -25,6 +26,7 @@
     "@payloadcms/plugin-cloud": "^2.0.0",
     "@payloadcms/richtext-slate": "^1.0.0",
     "axios-retry": "^4.1.0",
+    "base64-image-mime": "^1.0.2",
     "cross-env": "^7.0.3",
     "discord.js": "^14.14.1",
     "dotenv": "^8.2.0",
@@ -32,7 +34,8 @@
     "openai": "^4.33.0",
     "payload": "^2.12.1",
     "promise-memoize": "^1.2.1",
-    "replicate": "^0.29.1"
+    "replicate": "^0.29.1",
+    "sharp": "^0.33.3"
   },
   "devDependencies": {
     "@types/express": "^4.17.9",

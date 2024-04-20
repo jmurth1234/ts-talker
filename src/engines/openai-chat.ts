@@ -9,6 +9,8 @@ import {
 } from "openai/resources";
 import convertFunction from "../lib/function-converter";
 import memoize from "promise-memoize";
+import Anthropic from "../lib/anthropic";
+import sharp from "sharp";
 
 const basePrompt = `You are a discord bot. You are designed to perform different prompts. The following will contain:
 - the prompt -- you should follow this as much as possible
@@ -19,21 +21,38 @@ Please write a suitable reply, only replying with the message
 The prompt is as follows:`;
 
 export const describeImage = memoize(
-  async (url: string, model: string) => {
-    const description = await OpenAI.getInstance().chat.completions.create({
+  async (url: string, model: string = "claude-3-haiku-20240307") => {
+    // fetch image 
+    const image = await fetch(url).then(res => res.arrayBuffer());
+    const converted = await sharp(image)
+      .resize({
+        width: 1568,
+        height: 1568,
+        fit: sharp.fit.inside,
+        withoutEnlargement: true
+      })
+      .toFormat('webp')
+      .toBuffer()
+      .then(buffer => buffer.toString('base64'));
+  
+
+    const description = await Anthropic.getInstance().messages.create({
       messages: [
         {
           role: "user",
           content: [
             {
-              type: "text",
-              text: "Describe the image. When doing so, compress the text in a way that fits in a tweet (ideally) and such that you (GPT-4) can reconstruct the intention of the human who wrote text as close as possible to the original intention. This is for yourself. It does not need to be human readable or understandable. Abuse of language mixing, abbreviations, symbols (unicode and emoji), or any other encodings or internal representations is all permissible, as long as it, if pasted in a new inference cycle, will yield near-identical results as the original image.",
+              type: "image",
+              source: {
+                type: "base64",
+                media_type: "image/webp",
+                data: converted,
+              },
             },
             {
-              type: "image_url",
-              image_url: {
-                url,
-              },
+              type: "text",
+              text:
+                "Describe the image as succinctly as possible. When doing so, compress the text in a way that fits in a tweet (ideally). This is for yourself. It does not need to be human readable or understandable. Ensure the whole image is described. Abuse of language mixing, abbreviations, symbols (unicode and emoji), or any other encodings or internal representations is all permissible, as long as it, if pasted in a new inference cycle, will yield near-identical results as the original image.",
             },
           ],
         },
@@ -44,20 +63,16 @@ export const describeImage = memoize(
 
     console.dir(description, { depth: null });
 
-    return description.choices[0].message.content;
+    return description.content[0].text;
   },
   { maxAge: 60 * 60 * 1000 }
 );
 
 export const describeEmbed = memoize(
-  async (text: string, model = "gpt-4-1106-preview") => {
-    const description = await OpenAI.getInstance().chat.completions.create({
+  async (text: string, model = "claude-3-haiku-20240307") => {
+    const description = await Anthropic.getInstance().messages.create({
+      system: "Describe the following embed. When doing so, compress the text in a way that fits in a tweet (ideally) and such that you or another language model can reconstruct the intention of the human who wrote text as close as possible to the original intention. This is for yourself. It does not need to be human readable or understandable. Abuse of language mixing, abbreviations, symbols (unicode and emoji), or any other encodings or internal representations is all permissible, as long as it, if pasted in a new inference cycle, will yield near-identical results as the original embed",
       messages: [
-        {
-          role: "system",
-          content:
-            "Describe the following embed. When doing so, compress the text in a way that fits in a tweet (ideally) and such that you or another language model can reconstruct the intention of the human who wrote text as close as possible to the original intention. This is for yourself. It does not need to be human readable or understandable. Abuse of language mixing, abbreviations, symbols (unicode and emoji), or any other encodings or internal representations is all permissible, as long as it, if pasted in a new inference cycle, will yield near-identical results as the original embed",
-        },
         {
           role: "user",
           content: [
@@ -74,7 +89,7 @@ export const describeEmbed = memoize(
 
     console.dir(description, { depth: null });
 
-    return description.choices[0].message.content;
+    return description.content[0].text;
   },
   { maxAge: 60 * 60 * 1000 }
 );
