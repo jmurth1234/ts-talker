@@ -227,7 +227,7 @@ class OpenAIChatEngine extends TextEngine {
             bot.visionModel
           );
 
-          messageText += ` you see: ${description}`;
+          messageText += ` this is a text only representation of the image as described by another ai: : ${description}`;
         }
       }
 
@@ -328,7 +328,7 @@ class OpenAIChatEngine extends TextEngine {
             bot.visionModel
           );
 
-          messageText += ` you see: ${description}`;
+          messageText += ` this is a text only representation of the image as described by another ai: : ${description}`;
         }
       }
 
