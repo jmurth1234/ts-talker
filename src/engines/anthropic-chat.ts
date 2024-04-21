@@ -133,13 +133,13 @@ class AnthropicChatEngine extends TextEngine {
         .map((a) => a.url);
 
       for (const attachment of msg.attachments.toJSON()) {
-        messageText += `\n[attachment] ${attachment.name} ${attachment.description} ${attachment.url}`;
-
         if (
           attachment.contentType?.startsWith("image") &&
           bot.enableVision &&
           bot.visionModel
         ) {
+          messageText += `\n[attachment] ${attachment.name} ${attachment.description} ${attachment.url}`;
+
           // use the vision model to describe the image
           const description = await describeImage(
             attachment.url,
@@ -157,12 +157,12 @@ class AnthropicChatEngine extends TextEngine {
 
       if (lastMessage && lastMessage.role === "user" && !isBot) {
         if (bot.enableVision && !bot.visionModel) {
-          const content = lastMessage.content as any[];
-          (content[0] as TextBlockParam).text += `\n${messageText}`;
+          const messageContent = lastMessage.content as any[];
+          (messageContent[0] as TextBlockParam).text += `\n${messageText}`;
 
           for (const url of imageUrls) {
             const image = await fetchImage(url);
-            content.push({
+            messageContent.push({
               type: "image",
               source: {
                 type: "base64",
@@ -185,11 +185,11 @@ class AnthropicChatEngine extends TextEngine {
           };
         } else {
           if (bot.enableVision && !bot.visionModel) {
-            const content: any[] = [{ type: "text", text: messageText }];
+            const messageContent: any[] = [{ type: "text", text: messageText }];
 
             for (const url of imageUrls) {
               const image = await fetchImage(url);
-              content.push({
+              messageContent.push({
                 type: "image",
                 source: {
                   type: "base64",
@@ -201,7 +201,7 @@ class AnthropicChatEngine extends TextEngine {
 
             message = {
               role: "user",
-              content,
+              content: messageContent,
             };
           } else {
             message = {
