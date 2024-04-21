@@ -396,7 +396,7 @@ class AnthropicChatEngine extends TextEngine {
     }
 
     console.log("tools", tools);
-    console.dir(chatMessages, { depth: null });
+    console.dir(chatMessages, { depth: 3 });
 
     const response = await Anthropic.getInstance().beta.tools.messages.create(
       {
