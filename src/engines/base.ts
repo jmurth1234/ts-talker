@@ -31,7 +31,7 @@ abstract class BaseEngine {
         if (
           selectedMessages.length >= bot.limit &&
           !selectedMessages[
-            selectedMessages.length - 2
+            selectedMessages.length - 1 
           ].author.username.includes(bot.username)
         ) {
           break;

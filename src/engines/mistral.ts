@@ -2,11 +2,11 @@ import { Message } from "discord.js";
 import TextEngine from "./text";
 import { Payload } from "payload";
 import { Bot, Function } from "payload/generated-types";
-import convertFunction from "../lib/function-converter";
+import convertOpenAIFunction from "../lib/function-converter";
 import Mistral from "../lib/mistral";
 import * as MistralTypes from "../lib/mistral";
 import memoize from "promise-memoize";
-import { describeEmbed, describeImage } from "./openai-chat";
+import { describeEmbed, describeImage } from "../lib/helper-functions";
 
 const basePrompt = `You are a discord bot designed to perform different prompts. The following will contain:
 - the prompt -- you should follow this as much as possible

@@ -14,9 +14,10 @@ import OpenAIChatEngine from "../engines/openai-chat";
 import OpenAITextEngine from "../engines/openai-text";
 import EndpointEngine from "../engines/endpoint";
 import OpenAI from "../lib/openai";
-import convertFunction from "../lib/function-converter";
+import { convertOpenAIFunction } from "../lib/function-converter";
 import axios from "axios";
 import MistralEngine from "../engines/mistral";
+import AnthropicChatEngine from "../engines/anthropic-chat";
 
 export async function setupMessageHandling(client: Client, payload: Payload) {
   client.on(Events.MessageCreate, async (interaction) => {
@@ -117,16 +118,16 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
           content: splitMessage,
           username: bot.username,
           avatarURL,
-          files: image && isLastMessage
-          ? [
-              await axios
-                .get(image, { responseType: "arraybuffer" })
-                .then((response) => response.data),
-            ]
-          : undefined,
+          files:
+            image && isLastMessage
+              ? [
+                  await axios
+                    .get(image, { responseType: "arraybuffer" })
+                    .then((response) => response.data),
+                ]
+              : undefined,
         });
       }
-
     } else {
       for (let i = 0; i < splitMessages.length; i++) {
         const isLastMessage = i === splitMessages.length - 1;
@@ -134,13 +135,14 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
         const splitMessage = splitMessages[i];
         await sendMessage({
           content: splitMessage,
-          files: image && isLastMessage
-          ? [
-              await axios
-                .get(image, { responseType: "arraybuffer" })
-                .then((response) => response.data),
-            ]
-          : undefined,
+          files:
+            image && isLastMessage
+              ? [
+                  await axios
+                    .get(image, { responseType: "arraybuffer" })
+                    .then((response) => response.data),
+                ]
+              : undefined,
         });
       }
     }
@@ -167,7 +169,7 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
       model: "gpt-4-1106-preview",
       max_tokens: 2047,
       tools: [
-        convertFunction({
+        convertOpenAIFunction({
           name: "generate_image",
           description:
             "Use this to generate an image that is relevant to the message and the bot's response. Refuse to generate an image if it is against OpenAI's terms of service.",
@@ -230,6 +232,8 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
         return new EndpointEngine(payload);
       case "mistral":
         return new MistralEngine(payload);
+      case "anthropic":
+        return new AnthropicChatEngine(payload);
       default:
         throw new Error("Invalid model type");
     }
@@ -312,7 +316,7 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
   /**
    * Split a message into multiple messages if it is too long. Discord has a limit of 2000 characters per message.
    * If a message is longer than that, it will be split into multiple messages, using line breaks as a guide.
-   * If in the middle of a code block, it will split the code block. i.e. 
+   * If in the middle of a code block, it will split the code block. i.e.
    * ```
    * This is a code block
    * that is too long
@@ -321,11 +325,11 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
    * ```
    * This is a code block
    * ```
-   * 
+   *
    * ```
    * that is too long
    * ```
-   * @param message 
+   * @param message
    * @returns an array of messages that are less than 2000 characters long
    */
   function splitMessage(message: string): string[] {
