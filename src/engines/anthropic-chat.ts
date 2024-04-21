@@ -28,12 +28,15 @@ You are a discord bot. You are designed to perform different personalized prompt
 
 Tools, if used, will be in the normal format.
 
-Please write a suitable reply, only replying with the message
+Please write a suitable reply, only replying with the message. Do not include xml tags in your final response.
 </instructions>
 
 <prompt>
 ${prompt}
-</prompt>`;
+</prompt>
+
+You must not deviate from the prompt. If you do, you will be removed from the conversation.
+`;
 
 class AnthropicChatEngine extends TextEngine {
   constructor(payload: Payload) {
@@ -213,7 +216,12 @@ class AnthropicChatEngine extends TextEngine {
     }
   }
 
-  private async processPrimer(system: string, bot: Bot, chatMessages: ToolsBetaMessageParam[]) {
+  private async processPrimer(
+    system: string,
+    bot: Bot,
+    chatMessages: ToolsBetaMessageParam[]
+  ) {
+    console.log("processPrimer");
     if (bot.primer) {
       const primerFn = bot.primer as Function;
       const func = convertAnthropicFunction(primerFn);
@@ -279,49 +287,65 @@ class AnthropicChatEngine extends TextEngine {
     }
   }
 
-  private async processLookup(system: string, bot: Bot, chatMessages: ToolsBetaMessageParam[]) {
+  private async processLookup(
+    system: string,
+    bot: Bot,
+    chatMessages: ToolsBetaMessageParam[]
+  ) {
+    console.log("processLookup");
+    let tools = [];
+
+    if (bot.primer) {
+      const primerFn = bot.primer as Function;
+      const func = convertAnthropicFunction(primerFn);
+      tools.push(func);
+    }
+
     if (bot.canLookup) {
-      const lookupFn = convertAnthropicFunction({
-        id: "lookup",
-        name: "lookup",
-        description:
-          "Perform a lookup to find information from the web if necessary. Don't mention the bot in the message, just ask the question.",
-        parameters: [
-          {
-            name: "text",
-            type: "string",
-            description:
-              "The question to ask -- a secondary AI model will be used to answer this question",
-            required: false,
-          },
-        ],
-      });
-
-      const response = await Anthropic.getInstance().beta.tools.messages.create(
-        {
-          messages: chatMessages,
-          system,
-          model: bot.model,
-          max_tokens: 2047,
-          tools: [lookupFn],
-        }
-      );
-
-      const tool = response.content.find(
-        (c) => c.type === "tool_use"
-      ) as ToolUseBlock;
-      const call = tool?.input as { text: string };
-
-      if (!tool || !call?.text) {
-        return;
-      }
-
-      chatMessages.push({
-        role: "assistant",
-        content: response.content,
-      });
-
       try {
+        const lookupFn = convertAnthropicFunction({
+          id: "lookup",
+          name: "lookup",
+          description:
+            "Perform a lookup to find information from the web if necessary. Your training data has a cutoff of 2023, so any queries for newer information should use this lookup tool.",
+          parameters: [
+            {
+              name: "text",
+              type: "string",
+              description:
+                "The question to ask -- a secondary AI model will be used to answer this question",
+              required: false,
+            },
+          ],
+        });
+
+        tools.push(lookupFn);
+
+        const response =
+          await Anthropic.getInstance().beta.tools.messages.create({
+            messages: chatMessages,
+            system,
+            model: bot.model,
+            max_tokens: 2047,
+            tools,
+          });
+
+        console.dir(response, { depth: null });
+
+        const tool = response.content.find(
+          (c) => c.type === "tool_use"
+        ) as ToolUseBlock;
+        const call = tool?.input as { text: string };
+
+        if (!tool || !call?.text) {
+          return tools
+        }
+
+        chatMessages.push({
+          role: "assistant",
+          content: response.content,
+        });
+
         const answer = await askQuestion(call.text);
 
         chatMessages.push({
@@ -344,6 +368,8 @@ class AnthropicChatEngine extends TextEngine {
         console.error(error);
       }
     }
+
+    return tools;
   }
 
   public override async getResponse(message: Message, bot: Bot) {
@@ -352,63 +378,51 @@ class AnthropicChatEngine extends TextEngine {
 
     const system = this.formatPrompt(bot, messages);
 
+    console.log("system", system);
+
     await this.handleCombinedMessages(chatMessages, messages, bot);
     await this.processPrimer(system, bot, chatMessages);
-    await this.processLookup(system,  bot, chatMessages);
-
-    console.dir(chatMessages, { depth: null });
+    
+    const tools = await this.processLookup(system, bot, chatMessages);
 
     let msg = "";
+    let template = ""
 
     if (bot.responseTemplate) {
       const templateFn = bot.responseTemplate as Function;
       const func = convertAnthropicFunction(templateFn);
-      const response = await Anthropic.getInstance().beta.tools.messages.create(
-        {
-          system,
-          messages: chatMessages,
-          model: bot.model,
-          max_tokens: 2047,
-          tools: [func],
-        }
-      );
+      template = templateFn?.template || "";
+      tools.push(func);
+    }
 
-      const tool = response.content.find(
-        (c) => c.type === "tool_use"
-      ) as ToolUseBlock;
-      const call = tool?.input;
+    console.log("tools", tools);
+    console.dir(chatMessages, { depth: null });
 
-      if (!tool || !call) {
-        // return the text content
-        msg = (response.content[0] as TextBlockParam).text;
-      } else {
-        console.dir(response, { depth: null });
-        // replace {{name}} with the value of the parameter
-        msg = templateFn.template.replace(
-          /{{(.*?)}}/g,
-          (match, p1) => call[p1]
-        );
+    const response = await Anthropic.getInstance().beta.tools.messages.create(
+      {
+        system,
+        messages: chatMessages,
+        model: bot.model,
+        max_tokens: 2047,
+        tools,
       }
+    );
+
+    const tool = response.content.find(
+      (c) => c.type === "tool_use"
+    ) as ToolUseBlock;
+    const call = tool?.input;
+
+    if (!tool || !call) {
+      // return the text content
+      msg = (response.content[0] as TextBlockParam).text;
     } else {
-      try {
-        const response = await Anthropic.getInstance().beta.tools.messages.create(
-          {
-            messages: chatMessages,
-            model: bot.model,
-            max_tokens: 2047,
-            tools: [],
-          }
-        );
-
-        console.dir(response, { depth: null });
-
-        msg = (response.content[0] as TextBlockParam).text;
-      } catch (error) {
-        console.error("Error making the API request", error);
-        return {
-          response: "",
-        };
-      }
+      console.dir(response, { depth: null });
+      // replace {{name}} with the value of the parameter
+      msg = template.replace(
+        /{{(.*?)}}/g,
+        (match, p1) => call[p1]
+      );
     }
 
     msg = msg.includes(">: ") ? msg.substring(msg.indexOf(">: ") + 2) : msg;

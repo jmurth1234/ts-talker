@@ -94,7 +94,7 @@ export const askQuestion = memoize(async (question: string) => {
     messages: [
       {
         role: "user",
-        content: 'Answer the following question, add urls as much detail as possible. If you do not know the answer, you can say "I do not know". ' +
+        content: 'Answer the following question, add urls and as much detail as possible. If you do not know the answer, you can say "I do not know". ' +
           question,
       },
     ],
