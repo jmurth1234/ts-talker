@@ -20,22 +20,33 @@ import {
   ToolsBetaMessageParam,
 } from "@anthropic-ai/sdk/resources/beta/tools/messages";
 
-const basePrompt = (prompt: string) => `
-<instructions>
-You are a discord bot. You are designed to perform different personalized prompts. You will be given a prompt and you will need to respond with a personalized response. Messages from the user will be messages from the Discord channel. It will be in this format:
-- at least one message from the channel, in the format [timestamp] <username>: message
-- If a message has embeds or attachments, they will be included in the prompt as well under the message as [embed] or [attachment]
+const basePrompt = (intro: string, prompt: string, users: string) => `
+${intro}
 
-Tools, if used, will be in the normal format.
+You are roleplaying as the following persona:
 
-Please write a suitable reply, only replying with the message. Do not include xml tags in your final response.
-</instructions>
-
-<prompt>
+<persona>
 ${prompt}
-</prompt>
+</persona>
 
-You must not deviate from the prompt. If you do, you will be removed from the conversation.
+Here is a list of the users in the channel, along with their numerical IDs:
+
+<users>
+${users}
+</users>
+
+Please stay in character as the persona described above in all your replies.
+
+If you want to ping a user in your reply, use the format <@id> with their numerical ID inside the
+angle brackets.
+
+Before giving your in-character reply, think through what you want to say in this scratchpad:
+
+<scratchpad>
+</scratchpad>
+
+Now provide your in-character reply to the latest message in the conversation. Write your reply
+inside <reply> tags.
 `;
 
 class AnthropicChatEngine extends TextEngine {
@@ -50,31 +61,20 @@ class AnthropicChatEngine extends TextEngine {
       (b) => b.id === lastMessage.author.id
     );
 
-    console.log(bot.perUserBehavior);
-
     if (userBehavior) {
       prompt += userBehavior.prompt;
     }
 
-    if (!bot.fineTuned) {
-      prompt = `${basePrompt(prompt)}`;
-    }
+    let users = ""
 
     if (bot.canPingUsers) {
-      prompt += "\n\n<users>The following users are in the chat:";
       for (const msg of messages) {
         if (msg.author.bot) {
           continue;
         }
 
-        let username = msg.author.username.replace(/[^a-zA-Z0-9_]/g, "");
-
         if (!prompt.includes(msg.author.id)) {
-          prompt += `\n - <@${msg.author.id}> ${msg.author.username}`;
-
-          if (!bot.fineTuned) {
-            prompt += ` (${username})`;
-          }
+          users += `- <@${msg.author.id}> ${msg.author.username} \n`;
         }
 
         // do this for users mentioned in the message
@@ -83,30 +83,21 @@ class AnthropicChatEngine extends TextEngine {
             continue;
           }
 
-          username = user.username.replace(/[^a-zA-Z0-9_]/g, "");
-
           if (!prompt.includes(user.id)) {
-            prompt += `\n - <@${user.id}> ${user.username}`;
-
-            if (!bot.fineTuned) {
-              prompt += ` (${username})`;
-            }
+            users += `\n - <@${user.id}> ${user.username}`;
           }
         }
       }
-
-      if (!bot.fineTuned) {
-        prompt +=
-          "\nUse the <@id> to ping them in the chat. Include the angle brackets, and the ID must be numerical. \n</users>";
-      }
+    } else {
+      users = "User pings are disabled.";
     }
 
-    prompt += `Your name is ${bot.username}. Current time is ${new Date()
+    const intro = `Your name is ${bot.username}. Current time is ${new Date()
       .toISOString()
       .replace("T", " ")
       .substring(0, 19)}.`;
 
-    return prompt;
+    return basePrompt(intro, prompt, users);
   }
 
   private async handleCombinedMessages(
@@ -413,11 +404,12 @@ class AnthropicChatEngine extends TextEngine {
     ) as ToolUseBlock;
     const call = tool?.input;
 
+    console.dir(response, { depth: null });
+
     if (!tool || !call) {
       // return the text content
       msg = (response.content[0] as TextBlockParam).text;
     } else {
-      console.dir(response, { depth: null });
       // replace {{name}} with the value of the parameter
       msg = template.replace(
         /{{(.*?)}}/g,
@@ -425,7 +417,11 @@ class AnthropicChatEngine extends TextEngine {
       );
     }
 
-    msg = msg.includes(">: ") ? msg.substring(msg.indexOf(">: ") + 2) : msg;
+    // extract the reply from the reply tag in the text
+    const match = msg.match(/<reply>(.*?)<\/reply>/s);
+    if (match) {
+      msg = match[1];
+    }
 
     return {
       response: msg,
