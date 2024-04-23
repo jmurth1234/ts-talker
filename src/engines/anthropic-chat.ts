@@ -65,7 +65,7 @@ class AnthropicChatEngine extends TextEngine {
       prompt += userBehavior.prompt;
     }
 
-    let users = ""
+    let users = "";
 
     if (bot.canPingUsers) {
       for (const msg of messages) {
@@ -114,6 +114,7 @@ class AnthropicChatEngine extends TextEngine {
         .toISOString()
         .replace("T", " ")
         .substring(0, 19);
+
       const content = bot.canPingUsers ? msg.content : msg.cleanContent;
       let messageText = isBot
         ? content
@@ -170,13 +171,19 @@ class AnthropicChatEngine extends TextEngine {
       } else {
         let message: MessageParam;
         if (isBot) {
+          // if last message and the last message is a user message. properly terminate the last message
+          if (lastMessage && lastMessage.role === "user") {
+            lastMessage.content += `\n</messages>\nRemember to stay in character and provide your reply inside <reply> tags, and think through what you want to say beforehand with <scratchpad>. Any past messages from you will only contain the reply text.`;
+          }
           message = {
             role: "assistant",
             content: messageText,
           };
         } else {
           if (bot.enableVision && !bot.visionModel) {
-            const messageContent: any[] = [{ type: "text", text: messageText }];
+            const messageContent: any[] = [
+              { type: "text", text: `<messages>\n${messageText}` },
+            ];
 
             for (const url of imageUrls) {
               const image = await fetchImage(url);
@@ -197,7 +204,7 @@ class AnthropicChatEngine extends TextEngine {
           } else {
             message = {
               role: "user",
-              content: messageText,
+              content: `<messages>\n${messageText}`,
             };
           }
         }
@@ -329,7 +336,7 @@ class AnthropicChatEngine extends TextEngine {
         const call = tool?.input as { text: string };
 
         if (!tool || !call?.text) {
-          return tools
+          return tools;
         }
 
         chatMessages.push({
@@ -373,11 +380,11 @@ class AnthropicChatEngine extends TextEngine {
 
     await this.handleCombinedMessages(chatMessages, messages, bot);
     await this.processPrimer(system, bot, chatMessages);
-    
+
     const tools = await this.processLookup(system, bot, chatMessages);
 
     let msg = "";
-    let template = ""
+    let template = "";
 
     if (bot.responseTemplate) {
       const templateFn = bot.responseTemplate as Function;
@@ -389,15 +396,13 @@ class AnthropicChatEngine extends TextEngine {
     console.log("tools", tools);
     console.dir(chatMessages, { depth: 3 });
 
-    const response = await Anthropic.getInstance().beta.tools.messages.create(
-      {
-        system,
-        messages: chatMessages,
-        model: bot.model,
-        max_tokens: 2047,
-        tools,
-      }
-    );
+    const response = await Anthropic.getInstance().beta.tools.messages.create({
+      system,
+      messages: chatMessages,
+      model: bot.model,
+      max_tokens: 2047,
+      tools,
+    });
 
     const tool = response.content.find(
       (c) => c.type === "tool_use"
@@ -411,10 +416,7 @@ class AnthropicChatEngine extends TextEngine {
       msg = (response.content[0] as TextBlockParam).text;
     } else {
       // replace {{name}} with the value of the parameter
-      msg = template.replace(
-        /{{(.*?)}}/g,
-        (match, p1) => call[p1]
-      );
+      msg = template.replace(/{{(.*?)}}/g, (match, p1) => call[p1]);
     }
 
     // extract the reply from the reply tag in the text
