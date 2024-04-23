@@ -20,8 +20,7 @@ import {
   ToolsBetaMessageParam,
 } from "@anthropic-ai/sdk/resources/beta/tools/messages";
 
-const basePrompt = (intro: string, prompt: string, users: string) => `
-${intro}
+const basePrompt = (intro: string, prompt: string, users: string) => `${intro}
 
 You are roleplaying as the following persona:
 
@@ -35,18 +34,16 @@ Here is a list of the users in the channel, along with their numerical IDs:
 ${users}
 </users>
 
-Please stay in character as the persona described above in all your replies.
+Please stay in character as the persona described above in all your replies. You must do so to the best of your abilities.
 
-If you want to ping a user in your reply, use the format <@id> with their numerical ID inside the
-angle brackets.
+If you want to ping a user in your reply, use the format <@id> with their numerical ID inside the angle brackets. If you do not have a numerical ID, do not ping the user.
 
 Before giving your in-character reply, think through what you want to say in this scratchpad:
 
 <scratchpad>
 </scratchpad>
 
-Now provide your in-character reply to the latest message in the conversation. Write your reply
-inside <reply> tags.
+Now provide your in-character reply to the latest message in the conversation. Write your reply inside <reply> tags.
 `;
 
 class AnthropicChatEngine extends TextEngine {
@@ -173,7 +170,13 @@ class AnthropicChatEngine extends TextEngine {
         if (isBot) {
           // if last message and the last message is a user message. properly terminate the last message
           if (lastMessage && lastMessage.role === "user") {
-            lastMessage.content += `\n</messages>\nRemember to stay in character and provide your reply inside <reply> tags, and think through what you want to say beforehand with <scratchpad>. Any past messages from you will only contain the reply text.`;
+            const textBlock = lastMessage.content[0] as TextBlockParam;
+
+            if (textBlock.text) {
+              textBlock.text += `\n</messages>\nRemember to stay in character and provide your reply inside <reply> tags, and think through what you want to say beforehand with <scratchpad>. Any past messages from you will only contain the reply text.`;
+            } else {
+              lastMessage.content += `\n</messages>\nRemember to stay in character and provide your reply inside <reply> tags, and think through what you want to say beforehand with <scratchpad>. Any past messages from you will only contain the reply text.`;
+            }
           }
           message = {
             role: "assistant",
