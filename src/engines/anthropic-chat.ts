@@ -428,7 +428,7 @@ class AnthropicChatEngine extends TextEngine {
       ],
       model: bot.model,
       max_tokens: 2047,
-      tools,
+      //tools,
     });
 
     const tool = response.content.find(
