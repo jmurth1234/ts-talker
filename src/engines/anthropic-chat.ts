@@ -215,6 +215,19 @@ class AnthropicChatEngine extends TextEngine {
         chatMessages.push(message);
       }
     }
+
+    // properly terminate the last message
+    const lastMessage = chatMessages[chatMessages.length - 1];
+
+    if (lastMessage && lastMessage.role === "user") {
+      const textBlock = lastMessage.content[0] as TextBlockParam;
+
+      if (textBlock.text) {
+        textBlock.text += `\n</messages>\nRemember to stay in character and provide your reply inside <reply> tags, and think through what you want to say beforehand with <scratchpad>. Any past messages from you will only contain the reply text.`;
+      } else {
+        lastMessage.content += `\n</messages>\nRemember to stay in character and provide your reply inside <reply> tags, and think through what you want to say beforehand with <scratchpad>. Any past messages from you will only contain the reply text.`;
+      }
+    }
   }
 
   private async processPrimer(
