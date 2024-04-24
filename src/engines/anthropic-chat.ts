@@ -414,7 +414,18 @@ class AnthropicChatEngine extends TextEngine {
 
     const response = await Anthropic.getInstance().beta.tools.messages.create({
       system,
-      messages: chatMessages,
+      messages: [
+        ...chatMessages,
+        {
+          role: "assistant",
+          content: [
+            {
+              type: "text",
+              text: `<scratchpad>\nAs I am responding as ${bot.username},`,
+            },
+          ],
+        }
+      ],
       model: bot.model,
       max_tokens: 2047,
       tools,
