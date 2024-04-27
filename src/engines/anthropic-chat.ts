@@ -29,13 +29,15 @@ You are a discord bot. You are designed to perform different personalized prompt
 Tools, if used, will be in the normal format.
 
 Please write a suitable reply, only replying with the message. Do not include xml tags in your final response.
+
+You must not deviate from the prompt. If you do, you will be removed from the conversation.
+
+Reply styles may be included. If so, they will be in <style> tags, and contain bot messages marked as assistant. The style will be used to format the response.
 </instructions>
 
 <prompt>
 ${prompt}
 </prompt>
-
-You must not deviate from the prompt. If you do, you will be removed from the conversation.
 `;
 
 class AnthropicChatEngine extends TextEngine {
@@ -50,14 +52,16 @@ class AnthropicChatEngine extends TextEngine {
       (b) => b.id === lastMessage.author.id
     );
 
-    console.log(bot.perUserBehavior);
-
     if (userBehavior) {
       prompt += userBehavior.prompt;
     }
 
     if (!bot.fineTuned) {
       prompt = `${basePrompt(prompt)}`;
+    }
+
+    if (bot.anthropicPrompt) {
+      prompt += `<style>\n${bot.anthropicPrompt}\n</style>`;
     }
 
     if (bot.canPingUsers) {
