@@ -35,6 +35,7 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
     const botList = await payload.find({
       collection: "bots",
       where: { channelId: { equals: message.channel.id } },
+      pagination: false,
     });
 
     if (botList.totalDocs === 0) return;
