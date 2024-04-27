@@ -49,7 +49,7 @@ Now provide your in-character reply to the latest message in the conversation. W
 `;
 
 const stylePrompt = (style: string) => `
-This bot additionally provides example responses in the following style:
+This bot additionally provides example responses in the following style tags. Do not deviate from the given text style. Examples of his writing style are given. You must PRECISELY copy the text style, tone and behaviour given. 
 
 <style>
 ${style}
@@ -120,6 +120,12 @@ class AnthropicChatEngine extends TextEngine {
     messages: Message[],
     bot: Bot
   ) {
+    let endMessage = `\n</messages>\nRemember to stay in character and provide your reply inside <reply> tags, and think through what you want to say beforehand with <scratchpad>. Any past messages from you will only contain the reply text.`;
+
+    if (bot.anthropicPrompt) {
+      endMessage += 'Also, you must PRECISELY copy the text style, tone and behaviour given. Examples of his writing style were given. ';
+    }
+
     for (const msg of messages) {
       const isBot = msg.author.bot && msg.author.username === bot.username;
       const lastMessage = chatMessages[chatMessages.length - 1];
@@ -191,9 +197,9 @@ class AnthropicChatEngine extends TextEngine {
             const textBlock = lastMessage.content[0] as TextBlockParam;
 
             if (textBlock.text) {
-              textBlock.text += `\n</messages>\nRemember to stay in character and provide your reply inside <reply> tags, and think through what you want to say beforehand with <scratchpad>. Any past messages from you will only contain the reply text.`;
+              textBlock.text += endMessage;
             } else {
-              lastMessage.content += `\n</messages>\nRemember to stay in character and provide your reply inside <reply> tags, and think through what you want to say beforehand with <scratchpad>. Any past messages from you will only contain the reply text.`;
+              lastMessage.content += endMessage;
             }
           }
           message = {
@@ -241,9 +247,9 @@ class AnthropicChatEngine extends TextEngine {
       const textBlock = lastMessage.content[0] as TextBlockParam;
 
       if (textBlock.text) {
-        textBlock.text += `\n</messages>\nRemember to stay in character and provide your reply inside <reply> tags, and think through what you want to say beforehand with <scratchpad>. Any past messages from you will only contain the reply text.`;
+        textBlock.text += endMessage;
       } else {
-        lastMessage.content += `\n</messages>\nRemember to stay in character and provide your reply inside <reply> tags, and think through what you want to say beforehand with <scratchpad>. Any past messages from you will only contain the reply text.`;
+        lastMessage.content += endMessage;
       }
     }
   }
