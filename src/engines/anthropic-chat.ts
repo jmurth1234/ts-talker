@@ -498,6 +498,9 @@ class AnthropicChatEngine extends TextEngine {
       msg = match[1];
     }
 
+    // sometimes the bot outputs \n instead of a new line
+    msg = msg.replace(/\\n/g, "\n");
+
     return {
       response: msg,
     };
