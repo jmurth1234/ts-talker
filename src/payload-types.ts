@@ -26,12 +26,14 @@ export interface Bot {
   channelId: string;
   username: string;
   prompt: string;
+  responseStyle: 'short' | 'medium' | 'long' | 'dynamic';
   avatarUrl?: string | null;
   default?: boolean | null;
   modelType: 'chat' | 'completion' | 'mistral' | 'anthropic' | 'endpoint';
   endpointUrl?: string | null;
   apiKey?: string | null;
   model: string;
+  initialModel: string;
   enableVision?: boolean | null;
   visionModel?: string | null;
   fineTuned?: boolean | null;

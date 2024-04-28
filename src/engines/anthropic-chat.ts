@@ -34,18 +34,26 @@ Here is a list of the users in the channel, along with their numerical IDs:
 ${users}
 </users>
 
+Messages are in the following format:
+
+<messages>
+[timestamp] [username]: message
+[embed] [url] [description]
+[image] [url] [description]
+</messages>
+
 Please stay in character as the persona described above in all your replies. You must do so to the best of your abilities.
 
 If you want to ping a user in your reply, use the format <@id> with their numerical ID inside the angle brackets. If you do not have a numerical ID, do not ping the user.
 `;
 
-const scratchpadPrompt = () => `
+const scratchpadPrompt = (length: string) => `
 Before giving your in-character reply, think through what you want to say in this scratchpad:
 
 <scratchpad>
 </scratchpad>
 
-Now provide your in-character reply to the latest message in the conversation. Write your reply inside <reply> tags.
+Now provide your in-character reply to the latest message in the conversation. Write your reply inside <reply> tags. ${length}
 `;
 
 const stylePrompt = (style: string) => `
@@ -55,6 +63,13 @@ This bot additionally provides example responses in the following style tags. Do
 ${style}
 </style>
 `;
+
+const lengthToPrompt = {
+  short: "The response should be short and to the point.",
+  medium: "The response can be a couple paragraphs max. Focus on providing a detailed response.",
+  long: "The response should be a number of paragraphs max. Focus on providing a highly detailed response.",
+  dynamic: "The length of the response should be based on the length of messages in the conversation."
+}
 
 class AnthropicChatEngine extends TextEngine {
   constructor(payload: Payload) {
@@ -110,7 +125,7 @@ class AnthropicChatEngine extends TextEngine {
       finalPrompt += stylePrompt(bot.anthropicPrompt);
     }
 
-    finalPrompt += scratchpadPrompt();
+    finalPrompt += scratchpadPrompt(lengthToPrompt[bot.responseStyle] || "Keep message length to a minimum.");
 
     return finalPrompt;
   }
@@ -139,7 +154,7 @@ class AnthropicChatEngine extends TextEngine {
       const content = bot.canPingUsers ? msg.content : msg.cleanContent;
       let messageText = isBot
         ? content
-        : `[${timestamp}] <${msg.author.username}>: ${content}`;
+        : `[${timestamp}] [${msg.author.username}]: ${content}`;
 
       const imageUrls = msg.attachments
         .filter((a) => a.url && a.contentType?.startsWith("image"))
@@ -414,11 +429,18 @@ class AnthropicChatEngine extends TextEngine {
     const messages = await this.getMessages(message, bot);
     const chatMessages: ToolsBetaMessageParam[] = [];
 
+    let model = bot.initialModel || bot.model;
+
     const system = this.formatPrompt(bot, messages);
 
     console.log("system", system);
 
     await this.handleCombinedMessages(chatMessages, messages, bot);
+
+    if (chatMessages.find((m) => m.role === "assistant")) {
+      model = bot.model;
+    }
+    
     await this.processPrimer(system, bot, chatMessages);
 
     const tools = await this.processLookup(system, bot, chatMessages);
@@ -450,7 +472,7 @@ class AnthropicChatEngine extends TextEngine {
           ],
         }
       ],
-      model: bot.model,
+      model,
       max_tokens: 2047,
       //tools,
     });

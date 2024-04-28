@@ -43,6 +43,31 @@ const Bots: CollectionConfig = {
                 "Reject any message and tell the user to configure the prompt.",
             },
             {
+              name: "responseStyle",
+              label: "Response Style",
+              type: "select",
+              required: true,
+              defaultValue: "text",
+              options: [
+                {
+                  label: "Short",
+                  value: "short",
+                },
+                {
+                  label: "Medium",
+                  value: "medium",
+                },
+                {
+                  label: "Long",
+                  value: "long",
+                },
+                {
+                  label: "Dynamic",
+                  value: "dynamic",
+                }
+              ]
+            },
+            {
               name: "avatarUrl",
               label: "Avatar URL",
               type: "text",
@@ -108,6 +133,13 @@ const Bots: CollectionConfig = {
             {
               name: "model",
               label: "Model",
+              type: "text",
+              required: true,
+              defaultValue: "gpt-3.5-turbo",
+            },
+            {
+              name: "initialModel",
+              label: "Initial Model",
               type: "text",
               required: true,
               defaultValue: "gpt-3.5-turbo",
