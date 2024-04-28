@@ -140,9 +140,7 @@ const Bots: CollectionConfig = {
             {
               name: "initialModel",
               label: "Initial Model",
-              type: "text",
-              required: false,
-              defaultValue: "",
+              type: "text"
             },
             {
               name: "enableVision",
