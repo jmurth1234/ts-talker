@@ -47,7 +47,7 @@ const Bots: CollectionConfig = {
               label: "Response Style",
               type: "select",
               required: true,
-              defaultValue: "text",
+              defaultValue: "short",
               options: [
                 {
                   label: "Short",
@@ -141,8 +141,8 @@ const Bots: CollectionConfig = {
               name: "initialModel",
               label: "Initial Model",
               type: "text",
-              required: true,
-              defaultValue: "gpt-3.5-turbo",
+              required: false,
+              defaultValue: "",
             },
             {
               name: "enableVision",
