@@ -385,7 +385,7 @@ class OpenAIChatEngine extends TextEngine {
           ...chatMessages,
           {
             role: "system",
-            content: `You are a middleman designed to determine whether the above messages need a web search.`,
+            content: `You are a middleman designed to determine whether the above messages need a web search. The lookup model is a bit stupid and lacks things like the current date so be vey precise in any searches.`,
           }
         ],
         model: "gpt-4o",
