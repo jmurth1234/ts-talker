@@ -453,7 +453,8 @@ class OpenAIChatEngine extends TextEngine {
           messages: chatMessages,
           model: bot.model,
           max_tokens: 2047,
-          // tools: [lookupFn],
+          tools: [lookupFn],
+          tool_choice: 'none',
         });
 
         console.dir(response, { depth: null });
