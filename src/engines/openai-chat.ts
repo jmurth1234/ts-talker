@@ -361,8 +361,10 @@ class OpenAIChatEngine extends TextEngine {
       }
     }
 
+    let lookupFn: any;
+
     if (bot.canLookup) {
-      const lookupFn = convertOpenAIFunction({
+      lookupFn = convertOpenAIFunction({
         id: "lookup",
         name: "lookup",
         description:
@@ -379,13 +381,20 @@ class OpenAIChatEngine extends TextEngine {
       });
 
       const response = await OpenAI.getInstance(bot).chat.completions.create({
-        messages: chatMessages,
-        model: "gpt-4-turbo",
+        messages: [
+          ...chatMessages,
+          {
+            role: "system",
+            content: `You are a middleman designed to determine whether the above messages need a web search.`,
+          }
+        ],
+        model: "gpt-4o",
         max_tokens: 2047,
         tools: [lookupFn],
       });
 
       const msg = response.choices[0].message;
+      console.dir(msg, { depth: null });
 
       try {
         const call = JSON.parse(
@@ -444,6 +453,7 @@ class OpenAIChatEngine extends TextEngine {
           messages: chatMessages,
           model: bot.model,
           max_tokens: 2047,
+          tools: [lookupFn],
         });
 
         console.dir(response, { depth: null });
