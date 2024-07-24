@@ -362,25 +362,23 @@ class OpenAIChatEngine extends TextEngine {
       }
     }
 
-    let lookupFn: any;
+    let lookupFn: any = convertOpenAIFunction({
+      id: "lookup",
+      name: "lookup",
+      description:
+        "Perform a lookup to find information from the web if necessary. Don't mention the bot in the message, just ask the question.",
+      parameters: [
+        {
+          name: "text",
+          type: "string",
+          description:
+            "The question to ask -- a secondary AI model will be used to answer this question",
+          required: false,
+        },
+      ],
+    });
 
     if (bot.canLookup) {
-      lookupFn = convertOpenAIFunction({
-        id: "lookup",
-        name: "lookup",
-        description:
-          "Perform a lookup to find information from the web if necessary. Don't mention the bot in the message, just ask the question.",
-        parameters: [
-          {
-            name: "text",
-            type: "string",
-            description:
-              "The question to ask -- a secondary AI model will be used to answer this question",
-            required: false,
-          },
-        ],
-      });
-
       const response = await OpenAI.getInstance(bot).chat.completions.create({
         messages: [
           ...chatMessages,
