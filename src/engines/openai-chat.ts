@@ -12,6 +12,7 @@ import {
   describeImage,
   describeEmbed,
   askQuestion,
+  fetchImage,
 } from "../lib/helper-functions";
 
 const basePrompt = `You are a discord bot. You are designed to perform different prompts. The following will contain:
@@ -150,7 +151,7 @@ class OpenAIChatEngine extends TextEngine {
             content.push({
               type: "image_url",
               image_url: {
-                url,
+                url: await fetchImage(url),
               },
             });
           }
@@ -177,7 +178,7 @@ class OpenAIChatEngine extends TextEngine {
               (message.content as ChatCompletionContentPart[]).push({
                 type: "image_url",
                 image_url: {
-                  url,
+                  url: await fetchImage(url),
                 },
               });
             }
@@ -256,7 +257,7 @@ class OpenAIChatEngine extends TextEngine {
             content.push({
               type: "image_url",
               image_url: {
-                url,
+                url: await fetchImage(url),
               },
             });
           }
@@ -285,7 +286,7 @@ class OpenAIChatEngine extends TextEngine {
               (message.content as ChatCompletionContentPart[]).push({
                 type: "image_url",
                 image_url: {
-                  url,
+                  url: await fetchImage(url),
                 },
               });
             }
