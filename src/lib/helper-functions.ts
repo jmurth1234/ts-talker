@@ -98,7 +98,7 @@ export const askQuestion = memoize(async (question: string) => {
           question,
       },
     ],
-    model: "sonar-medium-chat",
+    model: "llama-3-sonar-large-32k-online",
     max_tokens: 2047,
   });
 
