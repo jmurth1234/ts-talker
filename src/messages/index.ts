@@ -40,7 +40,7 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
 
     if (botList.totalDocs === 0) return;
 
-    const activeBots = botList.docs;
+    const activeBots = botList.docs as unknown as Bot[];
 
     const defaultBot = activeBots.find((bot) => bot.default);
 
@@ -78,11 +78,13 @@ export async function setupMessageHandling(client: Client, payload: Payload) {
     }
 
     if (!bot) {
-      // pick one at random
-      const randomBot =
-        activeBots[Math.floor(Math.random() * activeBots.length)];
+      // filter out the bot that may have sent a message
+      const filteredBots = activeBots.filter(b => !message.author.username.includes(b.username));
+      
+      // pick one at random from the filtered list
+      const randomBot = filteredBots[Math.floor(Math.random() * filteredBots.length)];
 
-      if (randomBot.chance >= Math.random()) {
+      if (randomBot && randomBot.chance >= Math.random()) {
         bot = randomBot;
       }
     }
